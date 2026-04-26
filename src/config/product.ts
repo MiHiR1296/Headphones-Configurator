@@ -1,20 +1,19 @@
 export type BodyOptionId = 'graphite' | 'ivory' | 'moss' | 'navy'
 export type CushionOptionId = 'cocoa' | 'black' | 'stone'
 export type MetalOptionId = 'champagne' | 'silver' | 'gunmetal'
-export type LedOptionId = 'ice' | 'lime' | 'amber' | 'off'
-export type ModeId = 'assembled' | 'exploded'
 export type ViewId = 'hero' | 'side' | 'detail'
+export type ExperienceMode = 'customize' | 'information'
 export type PresetId = 'studio-graphite' | 'soft-ivory' | 'moss-edition'
+export type HotspotId = 'headband' | 'comfort' | 'ports' | 'adjusters'
 
 export type ConfigState = {
   preset: PresetId
   body: BodyOptionId
   cushion: CushionOptionId
   metal: MetalOptionId
-  led: LedOptionId
-  mode: ModeId
   view: ViewId
-  hotspots: boolean
+  mode: ExperienceMode
+  activeHotspot: HotspotId | null
 }
 
 export type SwatchOption<T extends string> = {
@@ -43,18 +42,11 @@ export const metalOptions: SwatchOption<MetalOptionId>[] = [
   { id: 'gunmetal', label: 'Gunmetal', hex: '#4c5258' },
 ]
 
-export const ledOptions: SwatchOption<LedOptionId>[] = [
-  { id: 'ice', label: 'Ice Blue', hex: '#7bd7ff' },
-  { id: 'lime', label: 'Lime', hex: '#b7ff68' },
-  { id: 'amber', label: 'Amber', hex: '#ffb357' },
-  { id: 'off', label: 'Off', hex: '#3b3b3b' },
-]
-
 export const presets: Array<{
   id: PresetId
   label: string
   description: string
-  config: Pick<ConfigState, 'body' | 'cushion' | 'metal' | 'led'>
+  config: Pick<ConfigState, 'body' | 'cushion' | 'metal'>
 }> = [
   {
     id: 'studio-graphite',
@@ -64,7 +56,6 @@ export const presets: Array<{
       body: 'graphite',
       cushion: 'cocoa',
       metal: 'champagne',
-      led: 'ice',
     },
   },
   {
@@ -75,7 +66,6 @@ export const presets: Array<{
       body: 'ivory',
       cushion: 'stone',
       metal: 'silver',
-      led: 'amber',
     },
   },
   {
@@ -86,7 +76,6 @@ export const presets: Array<{
       body: 'moss',
       cushion: 'black',
       metal: 'gunmetal',
-      led: 'lime',
     },
   },
 ]
@@ -96,10 +85,9 @@ export const defaultConfig: ConfigState = {
   body: 'graphite',
   cushion: 'cocoa',
   metal: 'champagne',
-  led: 'ice',
-  mode: 'assembled',
   view: 'hero',
-  hotspots: false,
+  mode: 'customize',
+  activeHotspot: null,
 }
 
 export const partGroups = {
@@ -145,43 +133,125 @@ export const cameraViews: Record<
   },
 }
 
+export const informationView = {
+  position: [2.25, 1.18, 2.95],
+  target: [0, 0.12, 0],
+  modelRotation: 0,
+} as const satisfies {
+  position: readonly [number, number, number]
+  target: readonly [number, number, number]
+  modelRotation: number
+}
+
+export const mobileInformationView = {
+  position: [0.16, 1.05, 4.55],
+  target: [0, 0.08, 0],
+  modelRotation: 0,
+} as const satisfies {
+  position: readonly [number, number, number]
+  target: readonly [number, number, number]
+  modelRotation: number
+}
+
 export const hotspotDefinitions = [
   {
-    id: 'drivers',
-    label: '40 mm acoustic drivers',
-    mesh: 'Vibrator_R',
-    position: [0.92, -0.18, 0.24],
+    id: 'headband',
+    label: 'Suede headband',
+    title: 'Suede leather headband',
+    description:
+      'Soft suede-style leather wraps the upper headband, with visible stitch detail preserved from the Blender material maps.',
+    mesh: 'Upper Head Cussions',
+    position: [0, 0.86, 0.06],
+    screen: {
+      desktop: [48, 22],
+      mobile: [58, 23],
+    },
+    camera: {
+      position: [0.62, 1.32, 1.18],
+      target: [0, 0.54, 0.02],
+    },
   },
   {
-    id: 'cushions',
-    label: 'Soft sealed cushions',
+    id: 'comfort',
+    label: 'Cushion seal',
+    title: 'Soft over-ear cushions',
+    description:
+      'The ear cushions keep the original leather/fabric normal texture and now take the selected cushion tint directly.',
     mesh: 'Ear Cup_L',
-    position: [-0.72, 0.24, -0.18],
+    position: [-0.62, 0.16, -0.32],
+    screen: {
+      desktop: [40, 52],
+      mobile: [38, 52],
+    },
+    camera: {
+      position: [-1.2, 0.42, 1.05],
+      target: [-0.34, 0.02, -0.12],
+    },
   },
   {
-    id: 'controls',
-    label: 'Tactile controls + ports',
-    mesh: 'Bluetooth On/Off Button',
-    position: [0.42, -0.52, 0.68],
+    id: 'ports',
+    label: 'USB-C + 3.5 mm',
+    title: 'Fast charging and wired audio',
+    description:
+      'A fast-charging USB-C port sits beside the 3.5 mm audio jack, so the product works both wireless and plugged in.',
+    mesh: 'Usb C port',
+    position: [0.48, -0.38, 0.54],
+    screen: {
+      desktop: [50, 70],
+      mobile: [62, 67],
+    },
+    camera: {
+      position: [0.86, 0.18, 0.98],
+      target: [0.28, -0.22, 0.16],
+    },
   },
   {
-    id: 'yokes',
-    label: 'Brushed adjustable yokes',
+    id: 'adjusters',
+    label: 'Metal adjusters',
+    title: 'Brushed metal adjustment arms',
+    description:
+      'The yokes and extension arms keep the Blender metallic response while the finish switches between champagne, silver, and gunmetal.',
     mesh: 'Ear cups Adjuster_R',
-    position: [-0.2, 0.76, 0.05],
+    position: [-0.24, 0.58, 0.08],
+    screen: {
+      desktop: [43, 35],
+      mobile: [42, 38],
+    },
+    camera: {
+      position: [-0.72, 0.82, 1.18],
+      target: [-0.16, 0.38, 0],
+    },
   },
-] as const
+] as const satisfies ReadonlyArray<{
+  id: HotspotId
+  label: string
+  title: string
+  description: string
+  mesh: string
+  position: readonly [number, number, number]
+  screen: {
+    desktop: readonly [number, number]
+    mobile: readonly [number, number]
+  }
+  camera: {
+    position: readonly [number, number, number]
+    target: readonly [number, number, number]
+  }
+}>
 
-export function findPresetForConfig(config: Pick<ConfigState, 'body' | 'cushion' | 'metal' | 'led'>) {
+export function findPresetForConfig(config: Pick<ConfigState, 'body' | 'cushion' | 'metal'>) {
   return (
     presets.find(
       (preset) =>
         preset.config.body === config.body &&
         preset.config.cushion === config.cushion &&
-        preset.config.metal === config.metal &&
-        preset.config.led === config.led,
+        preset.config.metal === config.metal,
     )?.id ?? 'studio-graphite'
   )
+}
+
+export function findHotspot(id: HotspotId | null) {
+  return hotspotDefinitions.find((hotspot) => hotspot.id === id) ?? null
 }
 
 export function isOption<T extends string>(

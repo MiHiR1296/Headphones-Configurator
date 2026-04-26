@@ -1,4 +1,4 @@
-import { Html, Environment, CameraControls, ContactShadows, Float, useGLTF } from '@react-three/drei'
+import { Environment, CameraControls, ContactShadows, Float, useGLTF } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import gsap from 'gsap'
 import { Suspense, useEffect, useMemo, useRef } from 'react'
@@ -8,102 +8,149 @@ import {
   Color,
   Group,
   MathUtils,
+  Material,
   Mesh,
   MeshPhysicalMaterial,
-  Object3D,
   Vector3,
 } from 'three'
 import {
   bodyOptions,
   cameraViews,
   cushionOptions,
-  hotspotDefinitions,
-  ledOptions,
+  findHotspot,
+  informationView,
   metalOptions,
+  mobileInformationView,
   partGroups,
   type ConfigState,
+  type HotspotId,
 } from '../config/product'
 
 type ConfiguratorSceneProps = {
   config: ConfigState
+  activeHotspot: HotspotId | null
   onCanvasReady: (canvas: HTMLCanvasElement) => void
 }
 
 const modelUrl = `${import.meta.env.BASE_URL}assets/models/headphones.glb`
 const modelCenter = new Vector3()
+type MaterialRole =
+  | 'body'
+  | 'cushion'
+  | 'metal'
+  | 'buttons'
+  | 'ports'
+  | 'led'
+  | 'decals'
+  | 'drivers'
+  | 'stitches'
 
-function createMaterialSet(config: ConfigState) {
+type TintableMaterial = Material & {
+  color?: Color
+  emissive?: Color
+  emissiveIntensity?: number
+  envMapIntensity?: number
+  metalness?: number
+  roughness?: number
+  clearcoat?: number
+  clearcoatRoughness?: number
+  sheen?: number
+  sheenRoughness?: number
+}
+
+function getRoleTint(role: MaterialRole, config: ConfigState) {
   const body = bodyOptions.find((item) => item.id === config.body) ?? bodyOptions[0]
   const cushion = cushionOptions.find((item) => item.id === config.cushion) ?? cushionOptions[0]
   const metal = metalOptions.find((item) => item.id === config.metal) ?? metalOptions[0]
-  const led = ledOptions.find((item) => item.id === config.led) ?? ledOptions[0]
   const darkDecal = config.body === 'ivory' || config.cushion === 'stone'
 
-  return {
-    body: new MeshPhysicalMaterial({
-      color: new Color(body.hex),
-      roughness: config.body === 'ivory' ? 0.42 : 0.34,
-      metalness: 0.08,
-      clearcoat: 0.42,
-      clearcoatRoughness: 0.38,
-      envMapIntensity: 1.35,
-    }),
-    cushion: new MeshPhysicalMaterial({
-      color: new Color(cushion.hex),
-      roughness: config.cushion === 'stone' ? 0.86 : 0.62,
+  const values: Record<
+    MaterialRole,
+    {
+      color: string
+      roughness: number
+      metalness: number
+      envMapIntensity: number
+      emissive?: string
+      emissiveIntensity?: number
+      clearcoat?: number
+      clearcoatRoughness?: number
+      sheen?: number
+      sheenRoughness?: number
+    }
+  > = {
+    body: {
+      color: body.hex,
+      roughness: config.body === 'ivory' ? 0.48 : 0.38,
+      metalness: 0.04,
+      envMapIntensity: 1.18,
+      clearcoat: 0.22,
+      clearcoatRoughness: 0.48,
+    },
+    cushion: {
+      color: cushion.hex,
+      roughness: config.cushion === 'stone' ? 0.92 : 0.72,
       metalness: 0,
-      sheen: 0.35,
-      sheenRoughness: 0.75,
-      envMapIntensity: 0.8,
-    }),
-    metal: new MeshPhysicalMaterial({
-      color: new Color(metal.hex),
-      roughness: config.metal === 'gunmetal' ? 0.34 : 0.22,
+      envMapIntensity: 0.86,
+      sheen: config.cushion === 'stone' ? 0.45 : 0.18,
+      sheenRoughness: 0.85,
+    },
+    metal: {
+      color: metal.hex,
+      roughness: config.metal === 'gunmetal' ? 0.38 : 0.28,
       metalness: 1,
-      anisotropy: 0.55,
-      envMapIntensity: 1.65,
-    }),
-    buttons: new MeshPhysicalMaterial({
-      color: new Color('#232323'),
-      roughness: 0.72,
+      envMapIntensity: 1.72,
+    },
+    buttons: {
+      color: '#1f2021',
+      roughness: 0.74,
       metalness: 0.02,
-      envMapIntensity: 0.65,
-    }),
-    ports: new MeshPhysicalMaterial({
-      color: new Color('#a9aeb2'),
-      roughness: 0.28,
-      metalness: 0.85,
-      envMapIntensity: 1.4,
-    }),
-    led: new MeshPhysicalMaterial({
-      color: new Color(led.hex),
-      emissive: new Color(led.hex),
-      emissiveIntensity: config.led === 'off' ? 0 : 3.8,
-      roughness: 0.18,
-      transmission: 0.15,
-    }),
-    decals: new MeshPhysicalMaterial({
-      color: new Color(darkDecal ? '#111214' : '#f6f2ea'),
-      roughness: 0.48,
+      envMapIntensity: 0.6,
+    },
+    ports: {
+      color: '#b6babd',
+      roughness: 0.3,
+      metalness: 0.88,
+      envMapIntensity: 1.45,
+    },
+    led: {
+      color: '#9de7ff',
+      roughness: 0.22,
       metalness: 0,
-      envMapIntensity: 0.35,
-    }),
-    drivers: new MeshPhysicalMaterial({
-      color: new Color('#121416'),
-      roughness: 0.92,
+      envMapIntensity: 1,
+      emissive: '#80dcff',
+      emissiveIntensity: 2.4,
+    },
+    decals: {
+      color: darkDecal ? '#151617' : '#f4efe8',
+      roughness: 0.5,
+      metalness: 0,
+      envMapIntensity: 0.4,
+    },
+    drivers: {
+      color: '#141618',
+      roughness: 0.95,
       metalness: 0,
       envMapIntensity: 0.25,
-    }),
-    stitches: new MeshPhysicalMaterial({
-      color: new Color(config.cushion === 'black' ? '#d5d0c7' : '#f0ece4'),
-      roughness: 0.82,
+    },
+    stitches: {
+      color: config.cushion === 'black' ? '#ded8cc' : '#f3eee5',
+      roughness: 0.84,
       metalness: 0,
       envMapIntensity: 0.45,
-    }),
+    },
   }
+
+  return values[role]
 }
 
-function materialRoleForName(name: string) {
+function materialRoleForName(name: string, materialName = ''): MaterialRole {
+  if (materialName === 'Stainless Steel') return 'ports'
+  if (materialName === 'Brushed metal' || materialName === 'Brushed Metal') return 'metal'
+  if (materialName === 'Mat Grey Plastic') return 'buttons'
+  if (materialName === 'LED Emission') return 'led'
+  if (materialName === 'On/Off Text' || materialName === 'Blutooth Icon') return 'decals'
+  if (materialName.includes('Vibrator')) return 'drivers'
   if (partGroups.cushions.includes(name as never)) return 'cushion'
   if (partGroups.metalYokes.includes(name as never)) return 'metal'
   if (partGroups.led.includes(name as never)) return 'led'
@@ -115,20 +162,49 @@ function materialRoleForName(name: string) {
   return 'body'
 }
 
-function getExplodeOffset(object: Object3D, center: Vector3) {
-  const world = new Vector3()
-  object.getWorldPosition(world)
-  const direction = world.sub(center).normalize()
-  if (direction.lengthSq() < 0.01) direction.set(0, 1, 0)
+function styleMaterial(original: Material | null | undefined, meshName: string, config: ConfigState) {
+  const source =
+    original ??
+    new MeshPhysicalMaterial({
+      color: '#858585',
+      roughness: 0.7,
+      metalness: 0,
+    })
+  const material = source.clone() as TintableMaterial
+  const role = materialRoleForName(meshName, material.name)
+  const tint = getRoleTint(role, config)
 
-  const name = object.name
-  const strength = name.includes('_L') ? 0.095 : name.includes('_R') ? 0.095 : 0.065
-  const lift =
-    name.includes('Cussions') || name.includes('Leather Frame') || name.includes('Stiches')
-      ? 0.045
-      : -0.018
+  if (material.color instanceof Color) material.color.set(tint.color)
+  if (material.emissive instanceof Color && tint.emissive) material.emissive.set(tint.emissive)
+  if ('emissiveIntensity' in material && tint.emissiveIntensity !== undefined) {
+    material.emissiveIntensity = tint.emissiveIntensity
+  }
+  if ('roughness' in material) material.roughness = tint.roughness
+  if ('metalness' in material) material.metalness = tint.metalness
+  if ('envMapIntensity' in material) material.envMapIntensity = tint.envMapIntensity
+  if ('clearcoat' in material && tint.clearcoat !== undefined) material.clearcoat = tint.clearcoat
+  if ('clearcoatRoughness' in material && tint.clearcoatRoughness !== undefined) {
+    material.clearcoatRoughness = tint.clearcoatRoughness
+  }
+  if ('sheen' in material && tint.sheen !== undefined) material.sheen = tint.sheen
+  if ('sheenRoughness' in material && tint.sheenRoughness !== undefined) {
+    material.sheenRoughness = tint.sheenRoughness
+  }
 
-  return new Vector3(direction.x * strength, direction.y * strength + lift, direction.z * strength)
+  material.needsUpdate = true
+  return material
+}
+
+function styleMeshMaterial(mesh: Mesh, config: ConfigState) {
+  const original = mesh.userData.originalMaterial as Material | Material[] | undefined
+  const current = original ?? mesh.material
+
+  if (Array.isArray(current)) {
+    mesh.material = current.map((material) => styleMaterial(material, mesh.name, config))
+    return
+  }
+
+  mesh.material = styleMaterial(current, mesh.name, config)
 }
 
 function SceneReady({ onCanvasReady }: { onCanvasReady: (canvas: HTMLCanvasElement) => void }) {
@@ -141,47 +217,15 @@ function SceneReady({ onCanvasReady }: { onCanvasReady: (canvas: HTMLCanvasEleme
   return null
 }
 
-function Hotspot({
-  object,
-  label,
-  fallbackPosition,
-  visible,
+function HeadphonesModel({
+  config,
+  activeHotspot,
 }: {
-  object: Object3D | undefined
-  label: string
-  fallbackPosition: readonly number[]
-  visible: boolean
+  config: ConfigState
+  activeHotspot: HotspotId | null
 }) {
-  const ref = useRef<Group>(null)
-  const position = useMemo(
-    () => new Vector3(fallbackPosition[0], fallbackPosition[1], fallbackPosition[2]),
-    [fallbackPosition],
-  )
-
-  useFrame(() => {
-    if (!ref.current) return
-    if (object) object.getWorldPosition(position)
-    ref.current.position.lerp(position, 0.32)
-  })
-
-  if (!visible) return null
-
-  return (
-    <group ref={ref}>
-      <Html center distanceFactor={0.62}>
-        <div className="hotspot-label">
-          <span />
-          {label}
-        </div>
-      </Html>
-    </group>
-  )
-}
-
-function HeadphonesModel({ config }: { config: ConfigState }) {
   const gltf = useGLTF(modelUrl)
   const rootRef = useRef<Group>(null)
-  const materialSet = useMemo(() => createMaterialSet(config), [config])
 
   const scene = useMemo(() => {
     const clone = gltf.scene.clone(true)
@@ -196,46 +240,23 @@ function HeadphonesModel({ config }: { config: ConfigState }) {
       -modelCenter.z * scalar,
     )
     clone.rotation.set(0, MathUtils.degToRad(-22), 0)
+    clone.traverse((object) => {
+      if (!(object instanceof Mesh)) return
+      object.castShadow = true
+      object.receiveShadow = true
+      object.userData.originalMaterial = Array.isArray(object.material)
+        ? object.material.map((material) => material.clone())
+        : object.material?.clone()
+    })
     return clone
   }, [gltf.scene])
 
-  const meshMap = useMemo(() => {
-    const nextMap = new Map<string, Object3D>()
-    scene.traverse((object) => {
-      if (!(object instanceof Mesh)) return
-      nextMap.set(object.name, object)
-      object.castShadow = true
-      object.receiveShadow = true
-      object.userData.originalPosition = object.position.clone()
-      object.userData.explodedOffset = getExplodeOffset(object, new Vector3())
-    })
-    return nextMap
-  }, [scene])
-
   useEffect(() => {
     scene.traverse((object) => {
       if (!(object instanceof Mesh)) return
-      const role = materialRoleForName(object.name)
-      object.material = materialSet[role]
+      styleMeshMaterial(object, config)
     })
-  }, [materialSet, scene])
-
-  useEffect(() => {
-    scene.traverse((object) => {
-      if (!(object instanceof Mesh)) return
-      const original = object.userData.originalPosition as Vector3 | undefined
-      const exploded = object.userData.explodedOffset as Vector3 | undefined
-      if (!original || !exploded) return
-      const target = config.mode === 'exploded' ? original.clone().add(exploded) : original
-      gsap.to(object.position, {
-        x: target.x,
-        y: target.y,
-        z: target.z,
-        duration: 0.8,
-        ease: 'power3.out',
-      })
-    })
-  }, [config.mode, scene])
+  }, [config, scene])
 
   useEffect(() => {
     const root = rootRef.current
@@ -250,34 +271,69 @@ function HeadphonesModel({ config }: { config: ConfigState }) {
     gsap.fromTo(root.position, { y: -0.16 }, { y: 0, duration: 1.1, ease: 'power3.out' })
   }, [])
 
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    if (config.mode === 'information' && !activeHotspot) {
+      gsap.to(root.rotation, {
+        x: 0,
+        y: informationView.modelRotation,
+        z: 0,
+        duration: 0.72,
+        ease: 'power3.out',
+      })
+      return
+    }
+
+    if (config.mode === 'customize') {
+      gsap.to(root.rotation, { x: 0, z: 0, duration: 0.35, ease: 'power2.out' })
+    }
+  }, [activeHotspot, config.mode])
+
   useFrame((_, delta) => {
     const root = rootRef.current
     if (!root) return
-    root.rotation.y += delta * (config.mode === 'exploded' ? 0.035 : 0.055)
+    if (config.mode === 'customize') {
+      root.rotation.y += delta * 0.045
+      return
+    }
+    if (activeHotspot) root.rotation.y += delta * 0.01
   })
 
   return (
-    <Float speed={1.2} rotationIntensity={0.05} floatIntensity={0.08}>
+    <Float
+      speed={config.mode === 'customize' ? 1.2 : 0}
+      rotationIntensity={config.mode === 'customize' ? 0.05 : 0}
+      floatIntensity={config.mode === 'customize' ? 0.08 : 0}
+    >
       <group ref={rootRef} position={[0, -0.02, 0]}>
         <primitive object={scene} />
-        {hotspotDefinitions.map((hotspot) => (
-          <Hotspot
-            key={hotspot.id}
-            object={meshMap.get(hotspot.mesh)}
-            label={hotspot.label}
-            fallbackPosition={hotspot.position}
-            visible={config.hotspots}
-          />
-        ))}
       </group>
     </Float>
   )
 }
 
-function CameraRig({ config }: { config: ConfigState }) {
+function CameraRig({ config, activeHotspot }: { config: ConfigState; activeHotspot: HotspotId | null }) {
   const controlsRef = useRef<CameraControlsImpl>(null)
+  const { size } = useThree()
 
   useEffect(() => {
+    if (config.mode === 'information') {
+      const hotspot = findHotspot(activeHotspot)
+      const view = hotspot?.camera ?? (size.width < 700 ? mobileInformationView : informationView)
+      controlsRef.current?.setLookAt(
+        view.position[0],
+        view.position[1],
+        view.position[2],
+        view.target[0],
+        view.target[1],
+        view.target[2],
+        true,
+      )
+      return
+    }
+
     const view = cameraViews[config.view]
     controlsRef.current?.setLookAt(
       view.position[0],
@@ -288,7 +344,7 @@ function CameraRig({ config }: { config: ConfigState }) {
       view.target[2],
       true,
     )
-  }, [config.view])
+  }, [activeHotspot, config.mode, config.view, size.width])
 
   return (
     <CameraControls
@@ -304,7 +360,11 @@ function CameraRig({ config }: { config: ConfigState }) {
   )
 }
 
-function ProductScene({ config, onCanvasReady }: ConfiguratorSceneProps) {
+function ProductScene({
+  config,
+  activeHotspot,
+  onCanvasReady,
+}: ConfiguratorSceneProps) {
   return (
     <Canvas
       shadows
@@ -319,7 +379,7 @@ function ProductScene({ config, onCanvasReady }: ConfiguratorSceneProps) {
       <spotLight position={[-3, 3.4, 2.8]} intensity={2} angle={0.38} penumbra={0.7} />
       <Environment preset="studio" environmentIntensity={1.05} />
       <Suspense fallback={null}>
-        <HeadphonesModel config={config} />
+        <HeadphonesModel config={config} activeHotspot={activeHotspot} />
         <ContactShadows
           position={[0, -1.02, 0]}
           opacity={0.24}
@@ -328,7 +388,7 @@ function ProductScene({ config, onCanvasReady }: ConfiguratorSceneProps) {
           far={3.2}
         />
       </Suspense>
-      <CameraRig config={config} />
+      <CameraRig config={config} activeHotspot={activeHotspot} />
     </Canvas>
   )
 }

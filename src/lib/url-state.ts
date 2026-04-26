@@ -3,17 +3,19 @@ import {
   cushionOptions,
   defaultConfig,
   findPresetForConfig,
+  hotspotDefinitions,
   isOption,
-  ledOptions,
   metalOptions,
   presets,
   type ConfigState,
-  type ModeId,
+  type ExperienceMode,
+  type HotspotId,
   type ViewId,
 } from '../config/product'
 
-const modes: ModeId[] = ['assembled', 'exploded']
 const views: ViewId[] = ['hero', 'side', 'detail']
+const modes: ExperienceMode[] = ['customize', 'information']
+const hotspotIds = hotspotDefinitions.map((hotspot) => hotspot.id)
 
 export function readConfigFromUrl(): ConfigState {
   if (typeof window === 'undefined') return defaultConfig
@@ -31,20 +33,30 @@ export function readConfigFromUrl(): ConfigState {
   const body = params.get('body')
   const cushion = params.get('cushion')
   const metal = params.get('metal')
-  const led = params.get('led')
-  const mode = params.get('mode')
   const view = params.get('view')
-  const hotspots = params.get('hotspots')
+  const mode = params.get('mode')
+  const legacyHotspots = params.get('hotspots')
+  const activeHotspot = params.get('hotspot')
+  const parsedHotspot = hotspotIds.includes(activeHotspot as HotspotId)
+    ? (activeHotspot as HotspotId)
+    : null
+  const parsedMode =
+    modes.includes(mode as ExperienceMode) || mode === 'info'
+      ? mode === 'info'
+        ? 'information'
+        : (mode as ExperienceMode)
+      : legacyHotspots === '1' || parsedHotspot
+        ? 'information'
+        : base.mode
 
   const next = {
     ...base,
     body: isOption(body, bodyOptions) ? body : base.body,
     cushion: isOption(cushion, cushionOptions) ? cushion : base.cushion,
     metal: isOption(metal, metalOptions) ? metal : base.metal,
-    led: isOption(led, ledOptions) ? led : base.led,
-    mode: modes.includes(mode as ModeId) ? (mode as ModeId) : base.mode,
     view: views.includes(view as ViewId) ? (view as ViewId) : base.view,
-    hotspots: hotspots === '1',
+    mode: parsedMode,
+    activeHotspot: parsedHotspot,
   }
 
   return {
@@ -61,10 +73,9 @@ export function writeConfigToUrl(config: ConfigState) {
   params.set('body', config.body)
   params.set('cushion', config.cushion)
   params.set('metal', config.metal)
-  params.set('led', config.led)
-  if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
-  if (config.hotspots) params.set('hotspots', '1')
+  if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
+  if (config.activeHotspot) params.set('hotspot', config.activeHotspot)
 
   const query = params.toString()
   const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
@@ -79,10 +90,9 @@ export function getShareUrl(config: ConfigState) {
   params.set('body', config.body)
   params.set('cushion', config.cushion)
   params.set('metal', config.metal)
-  params.set('led', config.led)
-  if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
-  if (config.hotspots) params.set('hotspots', '1')
+  if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
+  if (config.activeHotspot) params.set('hotspot', config.activeHotspot)
 
   return `${window.location.origin}${window.location.pathname}?${params.toString()}`
 }

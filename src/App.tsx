@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ControlPanel } from './components/ControlPanel'
 import { ConfiguratorScene } from './components/ConfiguratorScene'
-import { defaultConfig, findPresetForConfig, presets, type ConfigState, type PresetId } from './config/product'
+import {
+  defaultConfig,
+  findPresetForConfig,
+  presets,
+  type ConfigState,
+  type HotspotId,
+  type PresetId,
+} from './config/product'
 import { getShareUrl, readConfigFromUrl, writeConfigToUrl } from './lib/url-state'
 
 function App() {
@@ -18,6 +25,13 @@ function App() {
       const next = { ...current, ...patch }
       return {
         ...next,
+        activeHotspot:
+          patch.mode === 'customize'
+            ? null
+            : patch.activeHotspot === undefined
+              ? next.activeHotspot
+              : patch.activeHotspot,
+        mode: patch.activeHotspot ? 'information' : next.mode,
         preset: patch.preset ?? findPresetForConfig(next),
       }
     })
@@ -56,21 +70,32 @@ function App() {
     setConfig(defaultConfig)
   }, [])
 
+  const handleHotspotSelect = useCallback((hotspot: HotspotId | null) => {
+    setConfig((current) => ({
+      ...current,
+      mode: 'information',
+      activeHotspot: hotspot,
+    }))
+  }, [])
+
   const canvasReady = useCallback((canvas: HTMLCanvasElement) => {
     canvasRef.current = canvas
   }, [])
 
-  const sceneKey = useMemo(() => `${config.body}-${config.cushion}-${config.metal}-${config.led}`, [
+  const sceneKey = useMemo(() => `${config.body}-${config.cushion}-${config.metal}`, [
     config.body,
     config.cushion,
-    config.led,
     config.metal,
   ])
 
   return (
-    <main className="app-shell" data-material-key={sceneKey}>
+    <main className="app-shell" data-material-key={sceneKey} data-mode={config.mode}>
       <div className="scene-layer">
-        <ConfiguratorScene config={config} onCanvasReady={canvasReady} />
+        <ConfiguratorScene
+          config={config}
+          activeHotspot={config.activeHotspot}
+          onCanvasReady={canvasReady}
+        />
       </div>
       <div className="surface-grid" aria-hidden="true" />
       <ControlPanel
@@ -81,6 +106,7 @@ function App() {
         onShare={handleShare}
         onScreenshot={handleScreenshot}
         onReset={resetConfig}
+        onHotspotSelect={handleHotspotSelect}
       />
     </main>
   )
