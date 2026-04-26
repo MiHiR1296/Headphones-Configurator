@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react'
+import { useState } from 'react'
 import {
   bodyOptions,
   cameraViews,
@@ -22,6 +23,7 @@ import {
   metalOptions,
   portOptions,
   presets,
+  stitchOptions,
   type BodyOptionId,
   type ConfigState,
   type CushionOptionId,
@@ -30,6 +32,7 @@ import {
   type MetalOptionId,
   type PortOptionId,
   type PresetId,
+  type StitchOptionId,
   type ViewId,
 } from '../config/product'
 
@@ -82,10 +85,10 @@ function SwatchButton<T extends string>({
       type="button"
       className={`swatch-button ${active ? 'is-active' : ''}`}
       onClick={() => onClick(option.id)}
+      aria-label={option.label}
       title={option.label}
     >
       <span className="swatch" style={{ backgroundColor: option.hex }} />
-      <span className="swatch-label">{option.label}</span>
       {active ? <Check size={15} strokeWidth={2.4} /> : null}
     </button>
   )
@@ -103,6 +106,7 @@ export function ControlPanel({
 }: ControlPanelProps) {
   const activeHotspot = findHotspot(config.activeHotspot)
   const isInformationMode = config.mode === 'information'
+  const [panelOpen, setPanelOpen] = useState(true)
 
   return (
     <>
@@ -110,7 +114,10 @@ export function ControlPanel({
         <aside className="info-mode-toolbar" aria-label="Information controls">
           <IconButton
             label="Return to customization"
-            onClick={() => onChange({ mode: 'customize', activeHotspot: null, view: 'hero' })}
+            onClick={() => {
+              setPanelOpen(true)
+              onChange({ mode: 'customize', activeHotspot: null, view: 'hero' })
+            }}
           >
             <Menu size={20} />
           </IconButton>
@@ -143,6 +150,13 @@ export function ControlPanel({
 
           <aside className="mode-rail" aria-label="Scene modes">
             <IconButton
+              label={panelOpen ? 'Hide customization panel' : 'Show customization panel'}
+              active={panelOpen}
+              onClick={() => setPanelOpen((current) => !current)}
+            >
+              {panelOpen ? <X size={19} /> : <Menu size={19} />}
+            </IconButton>
+            <IconButton
               label="Information mode"
               onClick={() => onChange({ mode: 'information', activeHotspot: null })}
             >
@@ -150,6 +164,7 @@ export function ControlPanel({
             </IconButton>
           </aside>
 
+          {panelOpen ? (
           <aside className="config-panel" aria-label="Product configuration">
             <section className="panel-section panel-intro">
               <div>
@@ -263,7 +278,24 @@ export function ControlPanel({
                 ))}
               </div>
             </section>
+
+            <section className="panel-section control-stack">
+              <div className="section-heading">
+                <span>Stitches</span>
+              </div>
+              <div className="swatch-grid is-compact">
+                {stitchOptions.map((option) => (
+                  <SwatchButton<StitchOptionId>
+                    key={option.id}
+                    option={option}
+                    active={config.stitches === option.id}
+                    onClick={(stitches) => onChange({ stitches })}
+                  />
+                ))}
+              </div>
+            </section>
           </aside>
+          ) : null}
 
           <nav className="view-switcher" aria-label="Camera views">
             {Object.entries(cameraViews).map(([view, item]) => (

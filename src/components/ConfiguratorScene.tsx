@@ -4,8 +4,10 @@ import gsap from 'gsap'
 import { Suspense, useEffect, useMemo, useRef } from 'react'
 import type CameraControlsImpl from 'camera-controls'
 import {
+  ACESFilmicToneMapping,
   Box3,
   Color,
+  DoubleSide,
   Group,
   MathUtils,
   Material,
@@ -24,6 +26,7 @@ import {
   mobileInformationView,
   partGroups,
   portOptions,
+  stitchOptions,
   type ConfigState,
   type HotspotId,
 } from '../config/product'
@@ -38,7 +41,8 @@ const modelUrl = `${import.meta.env.BASE_URL}assets/models/headphones.glb`
 const modelCenter = new Vector3()
 type MaterialRole =
   | 'body'
-  | 'headband'
+  | 'headbandHard'
+  | 'headbandCushion'
   | 'cushion'
   | 'metal'
   | 'buttons'
@@ -67,17 +71,17 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
   const cushion = cushionOptions.find((item) => item.id === config.cushion) ?? cushionOptions[0]
   const metal = metalOptions.find((item) => item.id === config.metal) ?? metalOptions[0]
   const ports = portOptions.find((item) => item.id === config.ports) ?? portOptions[0]
+  const stitches = stitchOptions.find((item) => item.id === config.stitches) ?? stitchOptions[0]
 
   if (
     role === 'fixed' ||
     role === 'buttons' ||
     role === 'led' ||
     role === 'decals' ||
-    (role === 'headband' && headband.source) ||
+    ((role === 'headbandHard' || role === 'headbandCushion') && headband.source) ||
     (role === 'cushion' && cushion.source) ||
     (role === 'metal' && metal.source) ||
-    (role === 'ports' && ports.source) ||
-    (role === 'stitches' && headband.source)
+    (role === 'ports' && ports.source)
   ) {
     return null
   }
@@ -101,15 +105,23 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       color: body.hex,
       roughness: config.body === 'pearl' || config.body === 'ivory' ? 0.46 : 0.38,
       metalness: 0.04,
-      envMapIntensity: config.body === 'pearl' ? 1.32 : 1.18,
-      clearcoat: config.body === 'pearl' ? 0.34 : 0.22,
+      envMapIntensity: config.body === 'pearl' ? 0.88 : 0.95,
+      clearcoat: config.body === 'pearl' ? 0.26 : 0.2,
       clearcoatRoughness: config.body === 'pearl' ? 0.42 : 0.48,
     },
-    headband: {
+    headbandHard: {
+      color: headband.hex,
+      roughness: headband.id === 'stone' ? 0.78 : 0.58,
+      metalness: 0,
+      envMapIntensity: 0.7,
+      clearcoat: headband.id === 'black' ? 0.16 : 0.24,
+      clearcoatRoughness: 0.62,
+    },
+    headbandCushion: {
       color: headband.hex,
       roughness: headband.id === 'stone' ? 0.9 : 0.76,
       metalness: 0,
-      envMapIntensity: 0.8,
+      envMapIntensity: 0.68,
       sheen: headband.id === 'stone' ? 0.44 : 0.24,
       sheenRoughness: 0.86,
     },
@@ -117,7 +129,7 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       color: cushion.hex,
       roughness: config.cushion === 'stone' ? 0.92 : 0.72,
       metalness: 0,
-      envMapIntensity: 0.86,
+      envMapIntensity: 0.7,
       sheen: config.cushion === 'stone' ? 0.45 : 0.18,
       sheenRoughness: 0.85,
     },
@@ -125,7 +137,7 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       color: metal.hex,
       roughness: metal.id === 'gunmetal' ? 0.38 : 0.28,
       metalness: 1,
-      envMapIntensity: 1.72,
+      envMapIntensity: 1.12,
     },
     buttons: {
       color: '#1f2021',
@@ -137,7 +149,7 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       color: ports.hex,
       roughness: ports.id === 'black' ? 0.56 : 0.3,
       metalness: 0.88,
-      envMapIntensity: 1.45,
+      envMapIntensity: 1.05,
     },
     led: {
       color: '#9de7ff',
@@ -160,10 +172,10 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       envMapIntensity: 1,
     },
     stitches: {
-      color: headband.id === 'black' || headband.id === 'moss' ? '#ded8cc' : '#f3eee5',
+      color: stitches.hex,
       roughness: 0.84,
       metalness: 0,
-      envMapIntensity: 0.45,
+      envMapIntensity: 0.36,
     },
   }
 
@@ -174,12 +186,18 @@ function materialRoleForName(name: string, materialName = ''): MaterialRole {
   if (materialName === 'Right Vibrator' || materialName === 'Left Vibrator') return 'fixed'
   if (materialName.includes('Vibrator')) return 'fixed'
   if (materialName === 'Pitch Black') return 'fixed'
+  if (materialName === 'Hard Leather' || materialName === 'Leather Cut') return 'headbandHard'
+  if (materialName === 'Fabric Texture') return 'headbandCushion'
+  if (materialName === 'Leather_Skin' && partGroups.cushions.includes(name as never)) return 'cushion'
+  if (materialName === 'Leather_Skin' && partGroups.outerShell.includes(name as never)) return 'body'
+  if (materialName === 'Stiches' || materialName === 'Stiches 002') return 'stitches'
   if (materialName === 'Stainless Steel') return 'ports'
   if (materialName === 'Brushed metal' || materialName === 'Brushed Metal') return 'metal'
   if (materialName === 'Mat Grey Plastic') return 'buttons'
   if (materialName === 'LED Emission') return 'led'
   if (materialName === 'On/Off Text' || materialName === 'Blutooth Icon') return 'decals'
-  if (partGroups.headband.includes(name as never)) return 'headband'
+  if (partGroups.headbandHard.includes(name as never)) return 'headbandHard'
+  if (partGroups.headbandCushion.includes(name as never)) return 'headbandCushion'
   if (partGroups.cushions.includes(name as never)) return 'cushion'
   if (partGroups.metalYokes.includes(name as never)) return 'metal'
   if (partGroups.led.includes(name as never)) return 'led'
@@ -204,6 +222,7 @@ function styleMaterial(original: Material | null | undefined, meshName: string, 
   const role = materialRoleForName(meshName, material.name)
   const tint = getRoleTint(role, config)
   if (!tint) {
+    if (role === 'fixed') material.side = DoubleSide
     material.needsUpdate = true
     return material
   }
@@ -224,6 +243,7 @@ function styleMaterial(original: Material | null | undefined, meshName: string, 
   if ('sheenRoughness' in material && tint.sheenRoughness !== undefined) {
     material.sheenRoughness = tint.sheenRoughness
   }
+  if (role === 'fixed') material.side = DoubleSide
 
   material.needsUpdate = true
   return material
@@ -405,20 +425,25 @@ function ProductScene({
       dpr={[1, 1.75]}
       camera={{ position: cameraViews.hero.position, fov: 36, near: 0.01, far: 20 }}
       gl={{ antialias: true, preserveDrawingBuffer: true, alpha: true }}
+      onCreated={({ gl }) => {
+        gl.toneMapping = ACESFilmicToneMapping
+        gl.toneMappingExposure = 0.74
+      }}
     >
       <SceneReady onCanvasReady={onCanvasReady} />
-      <color attach="background" args={['#efeeeb']} />
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[2, 4, 3]} intensity={2.3} castShadow shadow-mapSize={2048} />
-      <spotLight position={[-3, 3.4, 2.8]} intensity={2} angle={0.38} penumbra={0.7} />
-      <Environment preset="studio" environmentIntensity={1.05} />
+      <color attach="background" args={['#e7e2d9']} />
+      <ambientLight intensity={0.36} />
+      <directionalLight position={[2.4, 4.2, 3.2]} intensity={1.35} castShadow shadow-mapSize={2048} />
+      <spotLight position={[-3.2, 3.1, 2.8]} intensity={0.85} angle={0.42} penumbra={0.72} />
+      <spotLight position={[2.8, 1.4, -2.4]} intensity={0.48} angle={0.34} penumbra={0.82} />
+      <Environment preset="apartment" environmentIntensity={0.62} />
       <Suspense fallback={null}>
         <HeadphonesModel config={config} activeHotspot={activeHotspot} />
         <ContactShadows
           position={[0, -1.02, 0]}
-          opacity={0.24}
+          opacity={0.32}
           scale={4.6}
-          blur={2.6}
+          blur={2.3}
           far={3.2}
         />
       </Suspense>

@@ -6,9 +6,9 @@ Live deployment target: `https://mihir1296.github.io/Headphones-Configurator/`
 
 ## Features
 
-- Web-ready GLB exported from the Blender source scene.
+- Web-ready GLB exported from the Blender source scene with render-visible modifiers evaluated.
 - Full-screen React + Three.js configurator with startup reveal and idle motion.
-- Texture-preserving material controls for Pearl shell, headband, cushions, brushed metal, and ports.
+- Texture-preserving material controls for Pearl shell, headband, cushions, brushed metal, ports, and stitches.
 - Presets, camera views, dedicated information mode, screenshots, and shareable URL state.
 - GitHub Pages workflow for automatic deployment from `main`.
 

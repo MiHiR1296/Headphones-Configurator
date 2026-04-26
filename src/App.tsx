@@ -82,13 +82,10 @@ function App() {
     canvasRef.current = canvas
   }, [])
 
-  const sceneKey = useMemo(() => `${config.body}-${config.headband}-${config.cushion}-${config.metal}-${config.ports}`, [
-    config.body,
-    config.headband,
-    config.cushion,
-    config.metal,
-    config.ports,
-  ])
+  const sceneKey = useMemo(
+    () => `${config.body}-${config.headband}-${config.cushion}-${config.metal}-${config.ports}-${config.stitches}`,
+    [config.body, config.headband, config.cushion, config.metal, config.ports, config.stitches],
+  )
 
   return (
     <main className="app-shell" data-material-key={sceneKey} data-mode={config.mode}>

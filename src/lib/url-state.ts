@@ -9,6 +9,7 @@ import {
   metalOptions,
   portOptions,
   presets,
+  stitchOptions,
   type BodyOptionId,
   type ConfigState,
   type ExperienceMode,
@@ -38,6 +39,7 @@ export function readConfigFromUrl(): ConfigState {
   const cushion = params.get('cushion')
   const metal = params.get('metal')
   const ports = params.get('ports')
+  const stitches = params.get('stitches')
   const view = params.get('view')
   const mode = params.get('mode')
   const legacyHotspots = params.get('hotspots')
@@ -63,6 +65,7 @@ export function readConfigFromUrl(): ConfigState {
     cushion: isOption(cushion, cushionOptions) ? cushion : base.cushion,
     metal: isOption(metal, metalOptions) ? metal : base.metal,
     ports: isOption(ports, portOptions) ? ports : base.ports,
+    stitches: isOption(stitches, stitchOptions) ? stitches : base.stitches,
     view: views.includes(view as ViewId) ? (view as ViewId) : base.view,
     mode: parsedMode,
     activeHotspot: parsedHotspot,
@@ -84,6 +87,7 @@ export function writeConfigToUrl(config: ConfigState) {
   params.set('cushion', config.cushion)
   params.set('metal', config.metal)
   params.set('ports', config.ports)
+  params.set('stitches', config.stitches)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
   if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.activeHotspot) params.set('hotspot', config.activeHotspot)
@@ -103,6 +107,7 @@ export function getShareUrl(config: ConfigState) {
   params.set('cushion', config.cushion)
   params.set('metal', config.metal)
   params.set('ports', config.ports)
+  params.set('stitches', config.stitches)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
   if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.activeHotspot) params.set('hotspot', config.activeHotspot)

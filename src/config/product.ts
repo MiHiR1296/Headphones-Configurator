@@ -3,6 +3,7 @@ export type HeadbandOptionId = 'source' | 'cocoa' | 'black' | 'stone' | 'moss'
 export type CushionOptionId = 'source' | 'cocoa' | 'black' | 'stone'
 export type MetalOptionId = 'source' | 'champagne' | 'silver' | 'gunmetal'
 export type PortOptionId = 'source' | 'silver' | 'gunmetal' | 'black'
+export type StitchOptionId = 'white' | 'black'
 export type ViewId = 'hero' | 'side' | 'detail'
 export type ExperienceMode = 'customize' | 'information'
 export type PresetId = 'pearl-reference' | 'soft-ivory' | 'moss-edition'
@@ -15,6 +16,7 @@ export type ConfigState = {
   cushion: CushionOptionId
   metal: MetalOptionId
   ports: PortOptionId
+  stitches: StitchOptionId
   view: ViewId
   mode: ExperienceMode
   activeHotspot: HotspotId | null
@@ -64,11 +66,16 @@ export const portOptions: SwatchOption<PortOptionId>[] = [
   { id: 'black', label: 'Matte Black', hex: '#1f2021' },
 ]
 
+export const stitchOptions: SwatchOption<StitchOptionId>[] = [
+  { id: 'white', label: 'White Stitches', hex: '#f2eee7' },
+  { id: 'black', label: 'Black Stitches', hex: '#151515' },
+]
+
 export const presets: Array<{
   id: PresetId
   label: string
   description: string
-  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports'>
+  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports' | 'stitches'>
 }> = [
   {
     id: 'pearl-reference',
@@ -80,6 +87,7 @@ export const presets: Array<{
       cushion: 'source',
       metal: 'source',
       ports: 'source',
+      stitches: 'white',
     },
   },
   {
@@ -92,6 +100,7 @@ export const presets: Array<{
       cushion: 'stone',
       metal: 'silver',
       ports: 'source',
+      stitches: 'black',
     },
   },
   {
@@ -104,6 +113,7 @@ export const presets: Array<{
       cushion: 'black',
       metal: 'gunmetal',
       ports: 'gunmetal',
+      stitches: 'white',
     },
   },
 ]
@@ -115,23 +125,17 @@ export const defaultConfig: ConfigState = {
   cushion: 'source',
   metal: 'source',
   ports: 'source',
+  stitches: 'white',
   view: 'hero',
   mode: 'customize',
   activeHotspot: null,
 }
 
 export const partGroups = {
-  headband: [
-    'Leather Frame',
-    'Upper Head Cussions',
-    'Side Head Cussions_R',
-    'Side Head Cussions_L',
-  ],
+  headbandHard: ['Leather Frame'],
+  headbandCushion: ['Upper Head Cussions', 'Side Head Cussions_R', 'Side Head Cussions_L'],
   headbandStitches: ['Outer Stiches', 'Inner Stiches'],
-  cushions: [
-    'Ear Cup_R',
-    'Ear Cup_L',
-  ],
+  cushions: ['Ear Cup_R', 'Ear Cup_L'],
   outerShell: ['Audion System_R', 'Audion System_L', 'Cover_R', 'Cover_L'],
   metalYokes: ['Extension_R', 'Extension_L', 'Ear cups Adjuster_R', 'Ear cups Adjuster_L'],
   buttonsPorts: [
@@ -273,7 +277,7 @@ export const hotspotDefinitions = [
 }>
 
 export function findPresetForConfig(
-  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports'>,
+  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports' | 'stitches'>,
 ) {
   return (
     presets.find(
@@ -282,7 +286,8 @@ export function findPresetForConfig(
         preset.config.headband === config.headband &&
         preset.config.cushion === config.cushion &&
         preset.config.metal === config.metal &&
-        preset.config.ports === config.ports,
+        preset.config.ports === config.ports &&
+        preset.config.stitches === config.stitches,
     )?.id ?? 'pearl-reference'
   )
 }
