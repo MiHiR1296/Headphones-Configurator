@@ -3,10 +3,13 @@ import {
   cushionOptions,
   defaultConfig,
   findPresetForConfig,
+  headbandOptions,
   hotspotDefinitions,
   isOption,
   metalOptions,
+  portOptions,
   presets,
+  type BodyOptionId,
   type ConfigState,
   type ExperienceMode,
   type HotspotId,
@@ -31,8 +34,10 @@ export function readConfigFromUrl(): ConfigState {
   }
 
   const body = params.get('body')
+  const headband = params.get('headband')
   const cushion = params.get('cushion')
   const metal = params.get('metal')
+  const ports = params.get('ports')
   const view = params.get('view')
   const mode = params.get('mode')
   const legacyHotspots = params.get('hotspots')
@@ -49,11 +54,15 @@ export function readConfigFromUrl(): ConfigState {
         ? 'information'
         : base.mode
 
+  const parsedBody = body === 'graphite' ? 'pearl' : body
+
   const next = {
     ...base,
-    body: isOption(body, bodyOptions) ? body : base.body,
+    body: isOption(parsedBody, bodyOptions) ? (parsedBody as BodyOptionId) : base.body,
+    headband: isOption(headband, headbandOptions) ? headband : base.headband,
     cushion: isOption(cushion, cushionOptions) ? cushion : base.cushion,
     metal: isOption(metal, metalOptions) ? metal : base.metal,
+    ports: isOption(ports, portOptions) ? ports : base.ports,
     view: views.includes(view as ViewId) ? (view as ViewId) : base.view,
     mode: parsedMode,
     activeHotspot: parsedHotspot,
@@ -71,8 +80,10 @@ export function writeConfigToUrl(config: ConfigState) {
   const params = new URLSearchParams()
   params.set('preset', config.preset)
   params.set('body', config.body)
+  params.set('headband', config.headband)
   params.set('cushion', config.cushion)
   params.set('metal', config.metal)
+  params.set('ports', config.ports)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
   if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.activeHotspot) params.set('hotspot', config.activeHotspot)
@@ -88,8 +99,10 @@ export function getShareUrl(config: ConfigState) {
   const params = new URLSearchParams()
   params.set('preset', config.preset)
   params.set('body', config.body)
+  params.set('headband', config.headband)
   params.set('cushion', config.cushion)
   params.set('metal', config.metal)
+  params.set('ports', config.ports)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
   if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.activeHotspot) params.set('hotspot', config.activeHotspot)

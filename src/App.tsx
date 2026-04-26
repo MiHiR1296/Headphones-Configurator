@@ -82,10 +82,12 @@ function App() {
     canvasRef.current = canvas
   }, [])
 
-  const sceneKey = useMemo(() => `${config.body}-${config.cushion}-${config.metal}`, [
+  const sceneKey = useMemo(() => `${config.body}-${config.headband}-${config.cushion}-${config.metal}-${config.ports}`, [
     config.body,
+    config.headband,
     config.cushion,
     config.metal,
+    config.ports,
   ])
 
   return (

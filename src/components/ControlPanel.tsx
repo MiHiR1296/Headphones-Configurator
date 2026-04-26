@@ -17,14 +17,18 @@ import {
   cameraViews,
   cushionOptions,
   findHotspot,
+  headbandOptions,
   hotspotDefinitions,
   metalOptions,
+  portOptions,
   presets,
   type BodyOptionId,
   type ConfigState,
   type CushionOptionId,
+  type HeadbandOptionId,
   type HotspotId,
   type MetalOptionId,
+  type PortOptionId,
   type PresetId,
   type ViewId,
 } from '../config/product'
@@ -182,7 +186,7 @@ export function ControlPanel({
 
             <section className="panel-section control-stack">
               <div className="section-heading">
-                <span>Body</span>
+                <span>Shell</span>
               </div>
               <div className="swatch-grid">
                 {bodyOptions.map((option) => (
@@ -191,6 +195,22 @@ export function ControlPanel({
                     option={option}
                     active={config.body === option.id}
                     onClick={(body) => onChange({ body })}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section className="panel-section control-stack">
+              <div className="section-heading">
+                <span>Headband</span>
+              </div>
+              <div className="swatch-grid">
+                {headbandOptions.map((option) => (
+                  <SwatchButton<HeadbandOptionId>
+                    key={option.id}
+                    option={option}
+                    active={config.headband === option.id}
+                    onClick={(headband) => onChange({ headband })}
                   />
                 ))}
               </div>
@@ -214,7 +234,7 @@ export function ControlPanel({
 
             <section className="panel-section control-stack">
               <div className="section-heading">
-                <span>Metal</span>
+                <span>Brushed metal</span>
               </div>
               <div className="swatch-grid">
                 {metalOptions.map((option) => (
@@ -223,6 +243,22 @@ export function ControlPanel({
                     option={option}
                     active={config.metal === option.id}
                     onClick={(metal) => onChange({ metal })}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section className="panel-section control-stack">
+              <div className="section-heading">
+                <span>Ports</span>
+              </div>
+              <div className="swatch-grid">
+                {portOptions.map((option) => (
+                  <SwatchButton<PortOptionId>
+                    key={option.id}
+                    option={option}
+                    active={config.ports === option.id}
+                    onClick={(ports) => onChange({ ports })}
                   />
                 ))}
               </div>

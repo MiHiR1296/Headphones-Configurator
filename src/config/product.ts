@@ -1,16 +1,20 @@
-export type BodyOptionId = 'graphite' | 'ivory' | 'moss' | 'navy'
-export type CushionOptionId = 'cocoa' | 'black' | 'stone'
-export type MetalOptionId = 'champagne' | 'silver' | 'gunmetal'
+export type BodyOptionId = 'pearl' | 'ivory' | 'moss' | 'navy'
+export type HeadbandOptionId = 'source' | 'cocoa' | 'black' | 'stone' | 'moss'
+export type CushionOptionId = 'source' | 'cocoa' | 'black' | 'stone'
+export type MetalOptionId = 'source' | 'champagne' | 'silver' | 'gunmetal'
+export type PortOptionId = 'source' | 'silver' | 'gunmetal' | 'black'
 export type ViewId = 'hero' | 'side' | 'detail'
 export type ExperienceMode = 'customize' | 'information'
-export type PresetId = 'studio-graphite' | 'soft-ivory' | 'moss-edition'
+export type PresetId = 'pearl-reference' | 'soft-ivory' | 'moss-edition'
 export type HotspotId = 'headband' | 'comfort' | 'ports' | 'adjusters'
 
 export type ConfigState = {
   preset: PresetId
   body: BodyOptionId
+  headband: HeadbandOptionId
   cushion: CushionOptionId
   metal: MetalOptionId
+  ports: PortOptionId
   view: ViewId
   mode: ExperienceMode
   activeHotspot: HotspotId | null
@@ -21,81 +25,110 @@ export type SwatchOption<T extends string> = {
   label: string
   hex: string
   secondaryHex?: string
+  source?: boolean
 }
 
 export const bodyOptions: SwatchOption<BodyOptionId>[] = [
-  { id: 'graphite', label: 'Graphite', hex: '#1d2024' },
+  { id: 'pearl', label: 'Pearl White', hex: '#f3efe6' },
   { id: 'ivory', label: 'Ivory', hex: '#ebe5dc' },
   { id: 'moss', label: 'Moss', hex: '#4b5f4a' },
   { id: 'navy', label: 'Navy', hex: '#162234' },
 ]
 
+export const headbandOptions: SwatchOption<HeadbandOptionId>[] = [
+  { id: 'source', label: 'Source Suede', hex: '#7d7b65', source: true },
+  { id: 'cocoa', label: 'Cocoa Suede', hex: '#6b4b34' },
+  { id: 'black', label: 'Black Suede', hex: '#171615' },
+  { id: 'stone', label: 'Stone Suede', hex: '#b9b5aa' },
+  { id: 'moss', label: 'Moss Suede', hex: '#4b5f4a' },
+]
+
 export const cushionOptions: SwatchOption<CushionOptionId>[] = [
+  { id: 'source', label: 'Source Leather', hex: '#5a4436', source: true },
   { id: 'cocoa', label: 'Cocoa Leather', hex: '#6b4b34' },
   { id: 'black', label: 'Black Leather', hex: '#171615' },
   { id: 'stone', label: 'Stone Fabric', hex: '#b9b5aa' },
 ]
 
 export const metalOptions: SwatchOption<MetalOptionId>[] = [
+  { id: 'source', label: 'Source Metal', hex: '#e0c49f', source: true },
   { id: 'champagne', label: 'Champagne', hex: '#d7bd84' },
   { id: 'silver', label: 'Brushed Silver', hex: '#b7bcc0' },
   { id: 'gunmetal', label: 'Gunmetal', hex: '#4c5258' },
+]
+
+export const portOptions: SwatchOption<PortOptionId>[] = [
+  { id: 'source', label: 'Source Steel', hex: '#747474', source: true },
+  { id: 'silver', label: 'Bright Silver', hex: '#b7bcc0' },
+  { id: 'gunmetal', label: 'Gunmetal', hex: '#4c5258' },
+  { id: 'black', label: 'Matte Black', hex: '#1f2021' },
 ]
 
 export const presets: Array<{
   id: PresetId
   label: string
   description: string
-  config: Pick<ConfigState, 'body' | 'cushion' | 'metal'>
+  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports'>
 }> = [
   {
-    id: 'studio-graphite',
-    label: 'Studio Graphite',
-    description: 'Dark body, cocoa cushions, champagne metal.',
+    id: 'pearl-reference',
+    label: 'Pearl Reference',
+    description: 'Pearl shell with Blender source leather, suede, and hardware.',
     config: {
-      body: 'graphite',
-      cushion: 'cocoa',
-      metal: 'champagne',
+      body: 'pearl',
+      headband: 'source',
+      cushion: 'source',
+      metal: 'source',
+      ports: 'source',
     },
   },
   {
     id: 'soft-ivory',
     label: 'Soft Ivory',
-    description: 'Ivory shell with stone fabric and brushed silver.',
+    description: 'Ivory shell with stone textiles and brushed silver.',
     config: {
       body: 'ivory',
+      headband: 'stone',
       cushion: 'stone',
       metal: 'silver',
+      ports: 'source',
     },
   },
   {
     id: 'moss-edition',
     label: 'Moss Edition',
-    description: 'Muted green shell, black cushions, gunmetal hardware.',
+    description: 'Muted green shell, moss headband, black cushions, gunmetal hardware.',
     config: {
       body: 'moss',
+      headband: 'moss',
       cushion: 'black',
       metal: 'gunmetal',
+      ports: 'gunmetal',
     },
   },
 ]
 
 export const defaultConfig: ConfigState = {
-  preset: 'studio-graphite',
-  body: 'graphite',
-  cushion: 'cocoa',
-  metal: 'champagne',
+  preset: 'pearl-reference',
+  body: 'pearl',
+  headband: 'source',
+  cushion: 'source',
+  metal: 'source',
+  ports: 'source',
   view: 'hero',
   mode: 'customize',
   activeHotspot: null,
 }
 
 export const partGroups = {
-  headband: ['Leather Frame', 'Outer Stiches', 'Inner Stiches'],
-  cushions: [
+  headband: [
+    'Leather Frame',
     'Upper Head Cussions',
     'Side Head Cussions_R',
     'Side Head Cussions_L',
+  ],
+  headbandStitches: ['Outer Stiches', 'Inner Stiches'],
+  cushions: [
     'Ear Cup_R',
     'Ear Cup_L',
   ],
@@ -163,7 +196,7 @@ export const hotspotDefinitions = [
     mesh: 'Upper Head Cussions',
     position: [0, 0.86, 0.06],
     screen: {
-      desktop: [48, 22],
+      desktop: [48, 23],
       mobile: [58, 23],
     },
     camera: {
@@ -173,15 +206,15 @@ export const hotspotDefinitions = [
   },
   {
     id: 'comfort',
-    label: 'Cushion seal',
+    label: 'Ear cushions',
     title: 'Soft over-ear cushions',
     description:
       'The ear cushions keep the original leather/fabric normal texture and now take the selected cushion tint directly.',
     mesh: 'Ear Cup_L',
     position: [-0.62, 0.16, -0.32],
     screen: {
-      desktop: [40, 52],
-      mobile: [38, 52],
+      desktop: [59, 55],
+      mobile: [68, 63],
     },
     camera: {
       position: [-1.2, 0.42, 1.05],
@@ -197,8 +230,8 @@ export const hotspotDefinitions = [
     mesh: 'Usb C port',
     position: [0.48, -0.38, 0.54],
     screen: {
-      desktop: [50, 70],
-      mobile: [62, 67],
+      desktop: [37, 74],
+      mobile: [32, 76],
     },
     camera: {
       position: [0.86, 0.18, 0.98],
@@ -214,8 +247,8 @@ export const hotspotDefinitions = [
     mesh: 'Ear cups Adjuster_R',
     position: [-0.24, 0.58, 0.08],
     screen: {
-      desktop: [43, 35],
-      mobile: [42, 38],
+      desktop: [41, 37],
+      mobile: [28, 70],
     },
     camera: {
       position: [-0.72, 0.82, 1.18],
@@ -239,14 +272,18 @@ export const hotspotDefinitions = [
   }
 }>
 
-export function findPresetForConfig(config: Pick<ConfigState, 'body' | 'cushion' | 'metal'>) {
+export function findPresetForConfig(
+  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports'>,
+) {
   return (
     presets.find(
       (preset) =>
         preset.config.body === config.body &&
+        preset.config.headband === config.headband &&
         preset.config.cushion === config.cushion &&
-        preset.config.metal === config.metal,
-    )?.id ?? 'studio-graphite'
+        preset.config.metal === config.metal &&
+        preset.config.ports === config.ports,
+    )?.id ?? 'pearl-reference'
   )
 }
 

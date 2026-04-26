@@ -18,10 +18,12 @@ import {
   cameraViews,
   cushionOptions,
   findHotspot,
+  headbandOptions,
   informationView,
   metalOptions,
   mobileInformationView,
   partGroups,
+  portOptions,
   type ConfigState,
   type HotspotId,
 } from '../config/product'
@@ -36,13 +38,14 @@ const modelUrl = `${import.meta.env.BASE_URL}assets/models/headphones.glb`
 const modelCenter = new Vector3()
 type MaterialRole =
   | 'body'
+  | 'headband'
   | 'cushion'
   | 'metal'
   | 'buttons'
   | 'ports'
   | 'led'
   | 'decals'
-  | 'drivers'
+  | 'fixed'
   | 'stitches'
 
 type TintableMaterial = Material & {
@@ -60,9 +63,24 @@ type TintableMaterial = Material & {
 
 function getRoleTint(role: MaterialRole, config: ConfigState) {
   const body = bodyOptions.find((item) => item.id === config.body) ?? bodyOptions[0]
+  const headband = headbandOptions.find((item) => item.id === config.headband) ?? headbandOptions[0]
   const cushion = cushionOptions.find((item) => item.id === config.cushion) ?? cushionOptions[0]
   const metal = metalOptions.find((item) => item.id === config.metal) ?? metalOptions[0]
-  const darkDecal = config.body === 'ivory' || config.cushion === 'stone'
+  const ports = portOptions.find((item) => item.id === config.ports) ?? portOptions[0]
+
+  if (
+    role === 'fixed' ||
+    role === 'buttons' ||
+    role === 'led' ||
+    role === 'decals' ||
+    (role === 'headband' && headband.source) ||
+    (role === 'cushion' && cushion.source) ||
+    (role === 'metal' && metal.source) ||
+    (role === 'ports' && ports.source) ||
+    (role === 'stitches' && headband.source)
+  ) {
+    return null
+  }
 
   const values: Record<
     MaterialRole,
@@ -81,11 +99,19 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
   > = {
     body: {
       color: body.hex,
-      roughness: config.body === 'ivory' ? 0.48 : 0.38,
+      roughness: config.body === 'pearl' || config.body === 'ivory' ? 0.46 : 0.38,
       metalness: 0.04,
-      envMapIntensity: 1.18,
-      clearcoat: 0.22,
-      clearcoatRoughness: 0.48,
+      envMapIntensity: config.body === 'pearl' ? 1.32 : 1.18,
+      clearcoat: config.body === 'pearl' ? 0.34 : 0.22,
+      clearcoatRoughness: config.body === 'pearl' ? 0.42 : 0.48,
+    },
+    headband: {
+      color: headband.hex,
+      roughness: headband.id === 'stone' ? 0.9 : 0.76,
+      metalness: 0,
+      envMapIntensity: 0.8,
+      sheen: headband.id === 'stone' ? 0.44 : 0.24,
+      sheenRoughness: 0.86,
     },
     cushion: {
       color: cushion.hex,
@@ -97,7 +123,7 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
     },
     metal: {
       color: metal.hex,
-      roughness: config.metal === 'gunmetal' ? 0.38 : 0.28,
+      roughness: metal.id === 'gunmetal' ? 0.38 : 0.28,
       metalness: 1,
       envMapIntensity: 1.72,
     },
@@ -108,8 +134,8 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       envMapIntensity: 0.6,
     },
     ports: {
-      color: '#b6babd',
-      roughness: 0.3,
+      color: ports.hex,
+      roughness: ports.id === 'black' ? 0.56 : 0.3,
       metalness: 0.88,
       envMapIntensity: 1.45,
     },
@@ -122,19 +148,19 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       emissiveIntensity: 2.4,
     },
     decals: {
-      color: darkDecal ? '#151617' : '#f4efe8',
+      color: '#151617',
       roughness: 0.5,
       metalness: 0,
       envMapIntensity: 0.4,
     },
-    drivers: {
-      color: '#141618',
+    fixed: {
+      color: '#ffffff',
       roughness: 0.95,
       metalness: 0,
-      envMapIntensity: 0.25,
+      envMapIntensity: 1,
     },
     stitches: {
-      color: config.cushion === 'black' ? '#ded8cc' : '#f3eee5',
+      color: headband.id === 'black' || headband.id === 'moss' ? '#ded8cc' : '#f3eee5',
       roughness: 0.84,
       metalness: 0,
       envMapIntensity: 0.45,
@@ -145,20 +171,24 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
 }
 
 function materialRoleForName(name: string, materialName = ''): MaterialRole {
+  if (materialName === 'Right Vibrator' || materialName === 'Left Vibrator') return 'fixed'
+  if (materialName.includes('Vibrator')) return 'fixed'
+  if (materialName === 'Pitch Black') return 'fixed'
   if (materialName === 'Stainless Steel') return 'ports'
   if (materialName === 'Brushed metal' || materialName === 'Brushed Metal') return 'metal'
   if (materialName === 'Mat Grey Plastic') return 'buttons'
   if (materialName === 'LED Emission') return 'led'
   if (materialName === 'On/Off Text' || materialName === 'Blutooth Icon') return 'decals'
-  if (materialName.includes('Vibrator')) return 'drivers'
+  if (partGroups.headband.includes(name as never)) return 'headband'
   if (partGroups.cushions.includes(name as never)) return 'cushion'
   if (partGroups.metalYokes.includes(name as never)) return 'metal'
   if (partGroups.led.includes(name as never)) return 'led'
   if (partGroups.decals.includes(name as never)) return 'decals'
-  if (partGroups.drivers.includes(name as never)) return 'drivers'
-  if (name === 'Outer Stiches' || name === 'Inner Stiches') return 'stitches'
+  if (partGroups.drivers.includes(name as never)) return 'fixed'
+  if (partGroups.headbandStitches.includes(name as never)) return 'stitches'
   if (name === 'Usb C port' || name === 'Audio Port') return 'ports'
   if (partGroups.buttonsPorts.includes(name as never)) return 'buttons'
+  if (partGroups.outerShell.includes(name as never)) return 'body'
   return 'body'
 }
 
@@ -173,6 +203,10 @@ function styleMaterial(original: Material | null | undefined, meshName: string, 
   const material = source.clone() as TintableMaterial
   const role = materialRoleForName(meshName, material.name)
   const tint = getRoleTint(role, config)
+  if (!tint) {
+    material.needsUpdate = true
+    return material
+  }
 
   if (material.color instanceof Color) material.color.set(tint.color)
   if (material.emissive instanceof Color && tint.emissive) material.emissive.set(tint.emissive)

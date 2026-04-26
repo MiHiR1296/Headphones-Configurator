@@ -8,7 +8,7 @@ Live deployment target: `https://mihir1296.github.io/Headphones-Configurator/`
 
 - Web-ready GLB exported from the Blender source scene.
 - Full-screen React + Three.js configurator with startup reveal and idle motion.
-- Texture-preserving material controls for body, cushions, and metal hardware.
+- Texture-preserving material controls for Pearl shell, headband, cushions, brushed metal, and ports.
 - Presets, camera views, dedicated information mode, screenshots, and shareable URL state.
 - GitHub Pages workflow for automatic deployment from `main`.
 
@@ -40,7 +40,7 @@ It was exported from:
 /Users/mihirbotle/Desktop/Personal/Website/Blender Archviz/Headphones/Headphones.blend
 ```
 
-The app maps mesh names from that export to semantic groups in `src/config/product.ts`, then tints cloned Blender materials so texture, normal, roughness, and metallic detail remain visible.
+The app maps mesh names from that export to semantic groups in `src/config/product.ts`, then tints cloned Blender materials so texture, normal, roughness, and metallic detail remain visible. Source-material options keep the imported Blender materials untouched.
 
 ## Verification
 
