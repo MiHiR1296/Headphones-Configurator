@@ -45,6 +45,8 @@ button {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  --mobile-control-offset: 76px;
+  --mobile-panel-height: clamp(170px, 25svh, 230px);
   background:
     linear-gradient(180deg, rgba(244, 241, 233, 0.76), rgba(216, 209, 195, 0.78)),
     radial-gradient(circle at 74% 22%, rgba(91, 134, 184, 0.1), transparent 36%),
@@ -207,6 +209,10 @@ button {
   box-shadow: 0 28px 80px rgba(58, 54, 45, 0.18);
   backdrop-filter: blur(22px);
   scrollbar-width: thin;
+}
+
+.panel-grip-button {
+  display: none;
 }
 
 .panel-section {
@@ -512,8 +518,12 @@ button {
     min-height: 100svh;
   }
 
+  .app-shell[data-mobile-panel='expanded'] {
+    --mobile-panel-height: clamp(330px, 50svh, 480px);
+  }
+
   .scene-layer {
-    inset: 0 0 260px;
+    inset: 0;
   }
 
   .app-shell[data-mode='information'] .scene-layer {
@@ -548,15 +558,24 @@ button {
   }
 
   .icon-button {
-    width: 40px;
-    height: 40px;
-    border-radius: 14px;
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
   }
 
   .mode-rail {
-    top: 92px;
-    left: 14px;
+    top: auto;
+    bottom: calc(var(--mobile-control-offset) + var(--mobile-panel-height) + 12px);
+    left: 12px;
+    grid-auto-flow: column;
     transform: none;
+  }
+
+  .app-shell[data-mode='information'] .mode-rail {
+    top: 92px;
+    bottom: auto;
+    left: 14px;
+    grid-auto-flow: row;
   }
 
   .info-detail-card {
@@ -571,11 +590,41 @@ button {
   .config-panel {
     top: auto;
     right: 12px;
-    bottom: 76px;
+    bottom: var(--mobile-control-offset);
     left: 12px;
     width: auto;
-    max-height: 42svh;
+    height: var(--mobile-panel-height);
+    max-height: none;
     border-radius: 20px;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    user-select: none;
+    transition:
+      height 240ms ease,
+      box-shadow 240ms ease;
+  }
+
+  .panel-grip-button {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: grid;
+    width: 48px;
+    height: 28px;
+    min-height: 28px;
+    place-items: center;
+    margin: 8px auto -2px;
+    border: 1px solid rgba(23, 24, 25, 0.1);
+    border-radius: 999px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 10px 24px rgba(58, 54, 45, 0.1);
+    cursor: pointer;
+    backdrop-filter: blur(18px);
+  }
+
+  .panel-section {
+    padding: 15px 16px;
   }
 
   .panel-intro h2 {

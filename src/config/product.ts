@@ -7,6 +7,7 @@ export type ViewId = 'hero' | 'detail'
 export type ExperienceMode = 'customize' | 'information'
 export type PresetId = 'pearl-reference' | 'soft-ivory' | 'moss-edition'
 export type HotspotId = 'headband' | 'comfort' | 'ports' | 'adjusters'
+export type MobilePanelState = 'compact' | 'expanded'
 
 export type ConfigState = {
   preset: PresetId

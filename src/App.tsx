@@ -7,6 +7,7 @@ import {
   presets,
   type ConfigState,
   type HotspotId,
+  type MobilePanelState,
   type PresetId,
 } from './config/product'
 import { getShareUrl, readConfigFromUrl, writeConfigToUrl } from './lib/url-state'
@@ -14,6 +15,7 @@ import { getShareUrl, readConfigFromUrl, writeConfigToUrl } from './lib/url-stat
 function App() {
   const [config, setConfig] = useState<ConfigState>(() => readConfigFromUrl())
   const [copied, setCopied] = useState(false)
+  const [mobilePanelState, setMobilePanelState] = useState<MobilePanelState>('compact')
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
@@ -88,11 +90,17 @@ function App() {
   )
 
   return (
-    <main className="app-shell" data-material-key={sceneKey} data-mode={config.mode}>
+    <main
+      className="app-shell"
+      data-material-key={sceneKey}
+      data-mode={config.mode}
+      data-mobile-panel={mobilePanelState}
+    >
       <div className="scene-layer">
         <ConfiguratorScene
           config={config}
           activeHotspot={config.activeHotspot}
+          mobilePanelState={mobilePanelState}
           onCanvasReady={canvasReady}
         />
       </div>
@@ -106,6 +114,8 @@ function App() {
         onScreenshot={handleScreenshot}
         onReset={resetConfig}
         onHotspotSelect={handleHotspotSelect}
+        mobilePanelState={mobilePanelState}
+        onMobilePanelStateChange={setMobilePanelState}
       />
     </main>
   )

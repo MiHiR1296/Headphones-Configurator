@@ -28,16 +28,22 @@ import {
   stitchOptions,
   type ConfigState,
   type HotspotId,
+  type MobilePanelState,
 } from '../config/product'
 
 type ConfiguratorSceneProps = {
   config: ConfigState
   activeHotspot: HotspotId | null
+  mobilePanelState: MobilePanelState
   onCanvasReady: (canvas: HTMLCanvasElement) => void
 }
 
 const modelUrl = `${import.meta.env.BASE_URL}assets/models/headphones.glb`
 const modelCenter = new Vector3()
+type CameraFrame = {
+  position: readonly [number, number, number]
+  target: readonly [number, number, number]
+}
 type MaterialRole =
   | 'body'
   | 'headbandHard'
@@ -191,6 +197,25 @@ function materialRoleForName(name: string, materialName = ''): MaterialRole {
   if (partGroups.buttonsPorts.includes(name as never)) return 'plastic'
   if (partGroups.outerShell.includes(name as never)) return 'body'
   return 'body'
+}
+
+function mobilePanelAwareView(
+  view: CameraFrame,
+  mobilePanelState: MobilePanelState,
+  isMobileLayout: boolean,
+): CameraFrame {
+  if (!isMobileLayout) return view
+
+  const expanded = mobilePanelState === 'expanded'
+  const isDetailView = view.position[2] < 2
+  const distanceOffset = isDetailView ? (expanded ? 0.44 : 0.24) : expanded ? 1.05 : 0.72
+  const targetYOffset = isDetailView ? (expanded ? -0.22 : -0.08) : expanded ? -0.44 : -0.18
+  const cameraYOffset = isDetailView ? (expanded ? 0.08 : 0.03) : expanded ? 0.12 : 0.08
+
+  return {
+    position: [view.position[0], view.position[1] + cameraYOffset, view.position[2] + distanceOffset],
+    target: [view.target[0], view.target[1] + targetYOffset, view.target[2]],
+  }
 }
 
 function styleMaterial(original: Material | null | undefined, meshName: string, config: ConfigState) {
@@ -351,11 +376,21 @@ function HeadphonesModel({
   )
 }
 
-function CameraRig({ config, activeHotspot }: { config: ConfigState; activeHotspot: HotspotId | null }) {
+function CameraRig({
+  config,
+  activeHotspot,
+  mobilePanelState,
+}: {
+  config: ConfigState
+  activeHotspot: HotspotId | null
+  mobilePanelState: MobilePanelState
+}) {
   const controlsRef = useRef<CameraControlsImpl>(null)
   const { size } = useThree()
 
   useEffect(() => {
+    const isMobileLayout = size.width < 980
+
     if (config.mode === 'information') {
       const hotspot = findHotspot(activeHotspot)
       const view = hotspot?.camera ?? (size.width < 700 ? mobileInformationView : informationView)
@@ -371,7 +406,7 @@ function CameraRig({ config, activeHotspot }: { config: ConfigState; activeHotsp
       return
     }
 
-    const view = cameraViews[config.view]
+    const view = mobilePanelAwareView(cameraViews[config.view], mobilePanelState, isMobileLayout)
     controlsRef.current?.setLookAt(
       view.position[0],
       view.position[1],
@@ -381,7 +416,7 @@ function CameraRig({ config, activeHotspot }: { config: ConfigState; activeHotsp
       view.target[2],
       true,
     )
-  }, [activeHotspot, config.mode, config.view, size.width])
+  }, [activeHotspot, config.mode, config.view, mobilePanelState, size.width])
 
   return (
     <CameraControls
@@ -400,6 +435,7 @@ function CameraRig({ config, activeHotspot }: { config: ConfigState; activeHotsp
 function ProductScene({
   config,
   activeHotspot,
+  mobilePanelState,
   onCanvasReady,
 }: ConfiguratorSceneProps) {
   return (
@@ -430,7 +466,7 @@ function ProductScene({
           far={3.2}
         />
       </Suspense>
-      <CameraRig config={config} activeHotspot={activeHotspot} />
+      <CameraRig config={config} activeHotspot={activeHotspot} mobilePanelState={mobilePanelState} />
     </Canvas>
   )
 }

@@ -1,6 +1,8 @@
 import {
   Camera,
   Check,
+  ChevronDown,
+  ChevronUp,
   Download,
   Eye,
   Headphones,
@@ -14,7 +16,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   bodyOptions,
   cameraViews,
@@ -30,6 +32,7 @@ import {
   type HeadbandOptionId,
   type HotspotId,
   type MetalOptionId,
+  type MobilePanelState,
   type PlasticOptionId,
   type PresetId,
   type StitchOptionId,
@@ -45,7 +48,15 @@ type ControlPanelProps = {
   onScreenshot: () => void
   onReset: () => void
   onHotspotSelect: (hotspot: HotspotId | null) => void
+  mobilePanelState: MobilePanelState
+  onMobilePanelStateChange: (state: MobilePanelState) => void
 }
+
+type PanelDragStart = {
+  x: number
+  y: number
+  canSnapDown: boolean
+} | null
 
 function IconButton({
   label,
@@ -103,10 +114,90 @@ export function ControlPanel({
   onScreenshot,
   onReset,
   onHotspotSelect,
+  mobilePanelState,
+  onMobilePanelStateChange,
 }: ControlPanelProps) {
   const activeHotspot = findHotspot(config.activeHotspot)
   const isInformationMode = config.mode === 'information'
   const [panelOpen, setPanelOpen] = useState(true)
+  const [isMobileLayout, setIsMobileLayout] = useState(false)
+  const panelRef = useRef<HTMLElement | null>(null)
+  const dragStartRef = useRef<PanelDragStart>(null)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 980px)')
+    const syncLayout = () => setIsMobileLayout(mediaQuery.matches)
+
+    syncLayout()
+    mediaQuery.addEventListener('change', syncLayout)
+
+    return () => mediaQuery.removeEventListener('change', syncLayout)
+  }, [])
+
+  const toggleMobilePanel = useCallback(() => {
+    onMobilePanelStateChange(mobilePanelState === 'expanded' ? 'compact' : 'expanded')
+  }, [mobilePanelState, onMobilePanelStateChange])
+
+  const togglePanel = useCallback(() => {
+    if (isMobileLayout) {
+      toggleMobilePanel()
+      return
+    }
+
+    setPanelOpen((current) => !current)
+  }, [isMobileLayout, toggleMobilePanel])
+
+  const handlePanelPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      if (!isMobileLayout || event.button !== 0) return
+
+      const panel = panelRef.current
+      if (!panel) return
+
+      const rect = panel.getBoundingClientRect()
+      dragStartRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        canSnapDown: panel.scrollTop <= 4 || event.clientY - rect.top < 84,
+      }
+    },
+    [isMobileLayout],
+  )
+
+  const handlePanelPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      const start = dragStartRef.current
+      dragStartRef.current = null
+      if (!start) return
+
+      const deltaX = event.clientX - start.x
+      const deltaY = event.clientY - start.y
+      const isVerticalSwipe = Math.abs(deltaY) > 48 && Math.abs(deltaY) > Math.abs(deltaX) * 1.15
+
+      if (!isVerticalSwipe) return
+
+      if (deltaY < 0) {
+        onMobilePanelStateChange('expanded')
+        return
+      }
+
+      if (start.canSnapDown) onMobilePanelStateChange('compact')
+    },
+    [onMobilePanelStateChange],
+  )
+
+  const handlePanelPointerCancel = useCallback(() => {
+    dragStartRef.current = null
+  }, [])
+
+  const panelVisible = isMobileLayout || panelOpen
+  const panelToggleLabel = isMobileLayout
+    ? mobilePanelState === 'expanded'
+      ? 'Collapse customization panel'
+      : 'Expand customization panel'
+    : panelOpen
+      ? 'Hide customization panel'
+      : 'Show customization panel'
 
   return (
     <>
@@ -150,11 +241,21 @@ export function ControlPanel({
 
           <aside className="mode-rail" aria-label="Scene modes">
             <IconButton
-              label={panelOpen ? 'Hide customization panel' : 'Show customization panel'}
-              active={panelOpen}
-              onClick={() => setPanelOpen((current) => !current)}
+              label={panelToggleLabel}
+              active={isMobileLayout ? mobilePanelState === 'expanded' : panelOpen}
+              onClick={togglePanel}
             >
-              {panelOpen ? <X size={19} /> : <Menu size={19} />}
+              {isMobileLayout ? (
+                mobilePanelState === 'expanded' ? (
+                  <ChevronDown size={19} />
+                ) : (
+                  <ChevronUp size={19} />
+                )
+              ) : panelOpen ? (
+                <X size={19} />
+              ) : (
+                <Menu size={19} />
+              )}
             </IconButton>
             <IconButton
               label="Information mode"
@@ -164,8 +265,25 @@ export function ControlPanel({
             </IconButton>
           </aside>
 
-          {panelOpen ? (
-            <aside className="config-panel" aria-label="Product configuration">
+          {panelVisible ? (
+            <aside
+              ref={panelRef}
+              className="config-panel"
+              aria-label="Product configuration"
+              data-mobile-state={mobilePanelState}
+              onPointerDown={handlePanelPointerDown}
+              onPointerUp={handlePanelPointerUp}
+              onPointerCancel={handlePanelPointerCancel}
+            >
+              <button
+                type="button"
+                className="panel-grip-button"
+                aria-label={panelToggleLabel}
+                title={panelToggleLabel}
+                onClick={toggleMobilePanel}
+              >
+                {mobilePanelState === 'expanded' ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+              </button>
               <section className="panel-section panel-intro">
                 <div>
                   <span className="section-kicker">
