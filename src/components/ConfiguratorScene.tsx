@@ -18,14 +18,13 @@ import {
 import {
   bodyOptions,
   cameraViews,
-  cushionOptions,
   findHotspot,
   headbandOptions,
   informationView,
   metalOptions,
   mobileInformationView,
   partGroups,
-  portOptions,
+  plasticOptions,
   stitchOptions,
   type ConfigState,
   type HotspotId,
@@ -43,10 +42,8 @@ type MaterialRole =
   | 'body'
   | 'headbandHard'
   | 'headbandCushion'
-  | 'cushion'
   | 'metal'
-  | 'buttons'
-  | 'ports'
+  | 'plastic'
   | 'led'
   | 'decals'
   | 'fixed'
@@ -68,20 +65,17 @@ type TintableMaterial = Material & {
 function getRoleTint(role: MaterialRole, config: ConfigState) {
   const body = bodyOptions.find((item) => item.id === config.body) ?? bodyOptions[0]
   const headband = headbandOptions.find((item) => item.id === config.headband) ?? headbandOptions[0]
-  const cushion = cushionOptions.find((item) => item.id === config.cushion) ?? cushionOptions[0]
   const metal = metalOptions.find((item) => item.id === config.metal) ?? metalOptions[0]
-  const ports = portOptions.find((item) => item.id === config.ports) ?? portOptions[0]
+  const plastic = plasticOptions.find((item) => item.id === config.plastic) ?? plasticOptions[0]
   const stitches = stitchOptions.find((item) => item.id === config.stitches) ?? stitchOptions[0]
 
   if (
     role === 'fixed' ||
-    role === 'buttons' ||
     role === 'led' ||
     role === 'decals' ||
     ((role === 'headbandHard' || role === 'headbandCushion') && headband.source) ||
-    (role === 'cushion' && cushion.source) ||
     (role === 'metal' && metal.source) ||
-    (role === 'ports' && ports.source)
+    (role === 'plastic' && plastic.source)
   ) {
     return null
   }
@@ -103,11 +97,13 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
   > = {
     body: {
       color: body.hex,
-      roughness: config.body === 'pearl' || config.body === 'ivory' ? 0.46 : 0.38,
-      metalness: 0.04,
-      envMapIntensity: config.body === 'pearl' ? 0.88 : 0.95,
-      clearcoat: config.body === 'pearl' ? 0.26 : 0.2,
-      clearcoatRoughness: config.body === 'pearl' ? 0.42 : 0.48,
+      roughness: config.body === 'pearl' || config.body === 'ivory' ? 0.72 : 0.66,
+      metalness: 0,
+      envMapIntensity: config.body === 'pearl' ? 0.72 : 0.64,
+      clearcoat: config.body === 'pearl' || config.body === 'ivory' ? 0.18 : 0.12,
+      clearcoatRoughness: 0.58,
+      sheen: config.body === 'pearl' || config.body === 'ivory' ? 0.2 : 0.12,
+      sheenRoughness: 0.82,
     },
     headbandHard: {
       color: headband.hex,
@@ -125,31 +121,19 @@ function getRoleTint(role: MaterialRole, config: ConfigState) {
       sheen: headband.id === 'stone' ? 0.44 : 0.24,
       sheenRoughness: 0.86,
     },
-    cushion: {
-      color: cushion.hex,
-      roughness: config.cushion === 'stone' ? 0.92 : 0.72,
-      metalness: 0,
-      envMapIntensity: 0.7,
-      sheen: config.cushion === 'stone' ? 0.45 : 0.18,
-      sheenRoughness: 0.85,
-    },
     metal: {
       color: metal.hex,
       roughness: metal.id === 'gunmetal' ? 0.38 : 0.28,
       metalness: 1,
       envMapIntensity: 1.12,
     },
-    buttons: {
-      color: '#1f2021',
-      roughness: 0.74,
+    plastic: {
+      color: plastic.hex,
+      roughness: plastic.id === 'pearl' ? 0.62 : 0.68,
       metalness: 0.02,
-      envMapIntensity: 0.6,
-    },
-    ports: {
-      color: ports.hex,
-      roughness: ports.id === 'black' ? 0.56 : 0.3,
-      metalness: 0.88,
-      envMapIntensity: 1.05,
+      envMapIntensity: plastic.id === 'pearl' ? 0.76 : 0.64,
+      clearcoat: plastic.id === 'source' ? 0 : 0.08,
+      clearcoatRoughness: 0.68,
     },
     led: {
       color: '#9de7ff',
@@ -188,24 +172,23 @@ function materialRoleForName(name: string, materialName = ''): MaterialRole {
   if (materialName === 'Pitch Black') return 'fixed'
   if (materialName === 'Hard Leather' || materialName === 'Leather Cut') return 'headbandHard'
   if (materialName === 'Fabric Texture') return 'headbandCushion'
-  if (materialName === 'Leather_Skin' && partGroups.cushions.includes(name as never)) return 'cushion'
-  if (materialName === 'Leather_Skin' && partGroups.outerShell.includes(name as never)) return 'body'
+  if (materialName === 'Leather_Skin') return 'body'
   if (materialName === 'Stiches' || materialName === 'Stiches 002') return 'stitches'
-  if (materialName === 'Stainless Steel') return 'ports'
+  if (materialName === 'Stainless Steel') return 'fixed'
   if (materialName === 'Brushed metal' || materialName === 'Brushed Metal') return 'metal'
-  if (materialName === 'Mat Grey Plastic') return 'buttons'
+  if (materialName === 'Mat Grey Plastic') return 'plastic'
   if (materialName === 'LED Emission') return 'led'
   if (materialName === 'On/Off Text' || materialName === 'Blutooth Icon') return 'decals'
   if (partGroups.headbandHard.includes(name as never)) return 'headbandHard'
   if (partGroups.headbandCushion.includes(name as never)) return 'headbandCushion'
-  if (partGroups.cushions.includes(name as never)) return 'cushion'
+  if (partGroups.earcups.includes(name as never)) return 'body'
   if (partGroups.metalYokes.includes(name as never)) return 'metal'
   if (partGroups.led.includes(name as never)) return 'led'
   if (partGroups.decals.includes(name as never)) return 'decals'
   if (partGroups.drivers.includes(name as never)) return 'fixed'
   if (partGroups.headbandStitches.includes(name as never)) return 'stitches'
-  if (name === 'Usb C port' || name === 'Audio Port') return 'ports'
-  if (partGroups.buttonsPorts.includes(name as never)) return 'buttons'
+  if (name === 'Usb C port' || name === 'Audio Port') return 'fixed'
+  if (partGroups.buttonsPorts.includes(name as never)) return 'plastic'
   if (partGroups.outerShell.includes(name as never)) return 'body'
   return 'body'
 }
@@ -349,7 +332,7 @@ function HeadphonesModel({
     const root = rootRef.current
     if (!root) return
     if (config.mode === 'customize') {
-      root.rotation.y += delta * 0.045
+      if (!config.rotationPaused) root.rotation.y += delta * 0.045
       return
     }
     if (activeHotspot) root.rotation.y += delta * 0.01
@@ -357,9 +340,9 @@ function HeadphonesModel({
 
   return (
     <Float
-      speed={config.mode === 'customize' ? 1.2 : 0}
-      rotationIntensity={config.mode === 'customize' ? 0.05 : 0}
-      floatIntensity={config.mode === 'customize' ? 0.08 : 0}
+      speed={config.mode === 'customize' && !config.rotationPaused ? 1.2 : 0}
+      rotationIntensity={config.mode === 'customize' && !config.rotationPaused ? 0.05 : 0}
+      floatIntensity={config.mode === 'customize' && !config.rotationPaused ? 0.08 : 0}
     >
       <group ref={rootRef} position={[0, -0.02, 0]}>
         <primitive object={scene} />

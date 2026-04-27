@@ -1,10 +1,9 @@
 export type BodyOptionId = 'pearl' | 'ivory' | 'moss' | 'navy'
 export type HeadbandOptionId = 'source' | 'cocoa' | 'black' | 'stone' | 'moss'
-export type CushionOptionId = 'source' | 'cocoa' | 'black' | 'stone'
 export type MetalOptionId = 'source' | 'champagne' | 'silver' | 'gunmetal'
-export type PortOptionId = 'source' | 'silver' | 'gunmetal' | 'black'
+export type PlasticOptionId = 'source' | 'graphite' | 'pearl' | 'navy' | 'moss'
 export type StitchOptionId = 'white' | 'black'
-export type ViewId = 'hero' | 'side' | 'detail'
+export type ViewId = 'hero' | 'detail'
 export type ExperienceMode = 'customize' | 'information'
 export type PresetId = 'pearl-reference' | 'soft-ivory' | 'moss-edition'
 export type HotspotId = 'headband' | 'comfort' | 'ports' | 'adjusters'
@@ -13,11 +12,11 @@ export type ConfigState = {
   preset: PresetId
   body: BodyOptionId
   headband: HeadbandOptionId
-  cushion: CushionOptionId
   metal: MetalOptionId
-  ports: PortOptionId
+  plastic: PlasticOptionId
   stitches: StitchOptionId
   view: ViewId
+  rotationPaused: boolean
   mode: ExperienceMode
   activeHotspot: HotspotId | null
 }
@@ -31,10 +30,10 @@ export type SwatchOption<T extends string> = {
 }
 
 export const bodyOptions: SwatchOption<BodyOptionId>[] = [
-  { id: 'pearl', label: 'Pearl White', hex: '#f3efe6' },
-  { id: 'ivory', label: 'Ivory', hex: '#ebe5dc' },
-  { id: 'moss', label: 'Moss', hex: '#4b5f4a' },
-  { id: 'navy', label: 'Navy', hex: '#162234' },
+  { id: 'pearl', label: 'Pearl Earcups', hex: '#f3efe6' },
+  { id: 'ivory', label: 'Ivory Earcups', hex: '#ebe5dc' },
+  { id: 'moss', label: 'Moss Earcups', hex: '#4b5f4a' },
+  { id: 'navy', label: 'Navy Earcups', hex: '#162234' },
 ]
 
 export const headbandOptions: SwatchOption<HeadbandOptionId>[] = [
@@ -45,13 +44,6 @@ export const headbandOptions: SwatchOption<HeadbandOptionId>[] = [
   { id: 'moss', label: 'Moss Suede', hex: '#4b5f4a' },
 ]
 
-export const cushionOptions: SwatchOption<CushionOptionId>[] = [
-  { id: 'source', label: 'Source Leather', hex: '#5a4436', source: true },
-  { id: 'cocoa', label: 'Cocoa Leather', hex: '#6b4b34' },
-  { id: 'black', label: 'Black Leather', hex: '#171615' },
-  { id: 'stone', label: 'Stone Fabric', hex: '#b9b5aa' },
-]
-
 export const metalOptions: SwatchOption<MetalOptionId>[] = [
   { id: 'source', label: 'Source Metal', hex: '#e0c49f', source: true },
   { id: 'champagne', label: 'Champagne', hex: '#d7bd84' },
@@ -59,11 +51,12 @@ export const metalOptions: SwatchOption<MetalOptionId>[] = [
   { id: 'gunmetal', label: 'Gunmetal', hex: '#4c5258' },
 ]
 
-export const portOptions: SwatchOption<PortOptionId>[] = [
-  { id: 'source', label: 'Source Steel', hex: '#747474', source: true },
-  { id: 'silver', label: 'Bright Silver', hex: '#b7bcc0' },
-  { id: 'gunmetal', label: 'Gunmetal', hex: '#4c5258' },
-  { id: 'black', label: 'Matte Black', hex: '#1f2021' },
+export const plasticOptions: SwatchOption<PlasticOptionId>[] = [
+  { id: 'source', label: 'Source Grey Plastic', hex: '#555555', source: true },
+  { id: 'graphite', label: 'Graphite Plastic', hex: '#202225' },
+  { id: 'pearl', label: 'Pearl Plastic', hex: '#d8d4ca' },
+  { id: 'navy', label: 'Navy Plastic', hex: '#172233' },
+  { id: 'moss', label: 'Moss Plastic', hex: '#4f5d49' },
 ]
 
 export const stitchOptions: SwatchOption<StitchOptionId>[] = [
@@ -75,44 +68,41 @@ export const presets: Array<{
   id: PresetId
   label: string
   description: string
-  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports' | 'stitches'>
+  config: Pick<ConfigState, 'body' | 'headband' | 'metal' | 'plastic' | 'stitches'>
 }> = [
   {
     id: 'pearl-reference',
     label: 'Pearl Reference',
-    description: 'Pearl shell with Blender source leather, suede, and hardware.',
+    description: 'Pearl earcups with Blender source suede, plastic, and hardware.',
     config: {
       body: 'pearl',
       headband: 'source',
-      cushion: 'source',
       metal: 'source',
-      ports: 'source',
+      plastic: 'source',
       stitches: 'white',
     },
   },
   {
     id: 'soft-ivory',
     label: 'Soft Ivory',
-    description: 'Ivory shell with stone textiles and brushed silver.',
+    description: 'Ivory earcups with stone suede, pearl plastic, and brushed silver.',
     config: {
       body: 'ivory',
       headband: 'stone',
-      cushion: 'stone',
       metal: 'silver',
-      ports: 'source',
+      plastic: 'pearl',
       stitches: 'black',
     },
   },
   {
     id: 'moss-edition',
     label: 'Moss Edition',
-    description: 'Muted green shell, moss headband, black cushions, gunmetal hardware.',
+    description: 'Muted green earcups, moss headband, dark plastic, and gunmetal hardware.',
     config: {
       body: 'moss',
       headband: 'moss',
-      cushion: 'black',
       metal: 'gunmetal',
-      ports: 'gunmetal',
+      plastic: 'graphite',
       stitches: 'white',
     },
   },
@@ -122,11 +112,11 @@ export const defaultConfig: ConfigState = {
   preset: 'pearl-reference',
   body: 'pearl',
   headband: 'source',
-  cushion: 'source',
   metal: 'source',
-  ports: 'source',
+  plastic: 'source',
   stitches: 'white',
   view: 'hero',
+  rotationPaused: false,
   mode: 'customize',
   activeHotspot: null,
 }
@@ -135,7 +125,7 @@ export const partGroups = {
   headbandHard: ['Leather Frame'],
   headbandCushion: ['Upper Head Cussions', 'Side Head Cussions_R', 'Side Head Cussions_L'],
   headbandStitches: ['Outer Stiches', 'Inner Stiches'],
-  cushions: ['Ear Cup_R', 'Ear Cup_L'],
+  earcups: ['Ear Cup_R', 'Ear Cup_L', 'Cover_R', 'Cover_L'],
   outerShell: ['Audion System_R', 'Audion System_L', 'Cover_R', 'Cover_L'],
   metalYokes: ['Extension_R', 'Extension_L', 'Ear cups Adjuster_R', 'Ear cups Adjuster_L'],
   buttonsPorts: [
@@ -156,11 +146,6 @@ export const cameraViews: Record<
   hero: {
     label: 'Hero',
     position: [2.7, 1.2, 2.8],
-    target: [0, 0.02, 0],
-  },
-  side: {
-    label: 'Side',
-    position: [0.28, 1.05, 3.35],
     target: [0, 0.02, 0],
   },
   detail: {
@@ -213,7 +198,7 @@ export const hotspotDefinitions = [
     label: 'Ear cushions',
     title: 'Soft over-ear cushions',
     description:
-      'The ear cushions keep the original leather/fabric normal texture and now take the selected cushion tint directly.',
+      'The over-ear pads keep the original Blender leather texture response while matching the selected earcup finish.',
     mesh: 'Ear Cup_L',
     position: [-0.62, 0.16, -0.32],
     screen: {
@@ -277,16 +262,15 @@ export const hotspotDefinitions = [
 }>
 
 export function findPresetForConfig(
-  config: Pick<ConfigState, 'body' | 'headband' | 'cushion' | 'metal' | 'ports' | 'stitches'>,
+  config: Pick<ConfigState, 'body' | 'headband' | 'metal' | 'plastic' | 'stitches'>,
 ) {
   return (
     presets.find(
       (preset) =>
         preset.config.body === config.body &&
         preset.config.headband === config.headband &&
-        preset.config.cushion === config.cushion &&
         preset.config.metal === config.metal &&
-        preset.config.ports === config.ports &&
+        preset.config.plastic === config.plastic &&
         preset.config.stitches === config.stitches,
     )?.id ?? 'pearl-reference'
   )

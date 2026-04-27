@@ -62,9 +62,9 @@ function App() {
     if (!canvas) return
     const link = document.createElement('a')
     link.href = canvas.toDataURL('image/png')
-    link.download = `auralux-h1-${config.body}-${config.cushion}.png`
+    link.download = `auralux-h1-${config.body}-${config.plastic}.png`
     link.click()
-  }, [config.body, config.cushion])
+  }, [config.body, config.plastic])
 
   const resetConfig = useCallback(() => {
     setConfig(defaultConfig)
@@ -83,8 +83,8 @@ function App() {
   }, [])
 
   const sceneKey = useMemo(
-    () => `${config.body}-${config.headband}-${config.cushion}-${config.metal}-${config.ports}-${config.stitches}`,
-    [config.body, config.headband, config.cushion, config.metal, config.ports, config.stitches],
+    () => `${config.body}-${config.headband}-${config.metal}-${config.plastic}-${config.stitches}`,
+    [config.body, config.headband, config.metal, config.plastic, config.stitches],
   )
 
   return (

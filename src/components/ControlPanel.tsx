@@ -7,6 +7,8 @@ import {
   Info,
   Menu,
   Palette,
+  Pause,
+  Play,
   RotateCcw,
   Share2,
   SlidersHorizontal,
@@ -16,21 +18,19 @@ import { useState } from 'react'
 import {
   bodyOptions,
   cameraViews,
-  cushionOptions,
   findHotspot,
   headbandOptions,
   hotspotDefinitions,
   metalOptions,
-  portOptions,
+  plasticOptions,
   presets,
   stitchOptions,
   type BodyOptionId,
   type ConfigState,
-  type CushionOptionId,
   type HeadbandOptionId,
   type HotspotId,
   type MetalOptionId,
-  type PortOptionId,
+  type PlasticOptionId,
   type PresetId,
   type StitchOptionId,
   type ViewId,
@@ -111,7 +111,7 @@ export function ControlPanel({
   return (
     <>
       {isInformationMode ? (
-        <aside className="info-mode-toolbar" aria-label="Information controls">
+        <aside className="mode-rail" aria-label="Information controls">
           <IconButton
             label="Return to customization"
             onClick={() => {
@@ -119,7 +119,7 @@ export function ControlPanel({
               onChange({ mode: 'customize', activeHotspot: null, view: 'hero' })
             }}
           >
-            <Menu size={20} />
+            <X size={19} />
           </IconButton>
         </aside>
       ) : (
@@ -165,150 +165,147 @@ export function ControlPanel({
           </aside>
 
           {panelOpen ? (
-          <aside className="config-panel" aria-label="Product configuration">
-            <section className="panel-section panel-intro">
-              <div>
-                <span className="section-kicker">
-                  <SlidersHorizontal size={14} />
-                  Live setup
-                </span>
-                <h2>Premium over-ear finish</h2>
-              </div>
-              <p>{copied ? 'Share link copied.' : 'Configure finishes and inspect the product state.'}</p>
-            </section>
+            <aside className="config-panel" aria-label="Product configuration">
+              <section className="panel-section panel-intro">
+                <div>
+                  <span className="section-kicker">
+                    <SlidersHorizontal size={14} />
+                    Live setup
+                  </span>
+                  <h2>Premium over-ear finish</h2>
+                </div>
+                <p>{copied ? 'Share link copied.' : 'Configure finishes and inspect the product state.'}</p>
+              </section>
 
-            <section className="panel-section">
-              <div className="section-heading">
-                <span>
-                  <Palette size={15} />
-                  Presets
-                </span>
-              </div>
-              <div className="preset-grid">
-                {presets.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className={`preset-button ${config.preset === preset.id ? 'is-active' : ''}`}
-                    onClick={() => onPreset(preset.id)}
-                  >
-                    <span>{preset.label}</span>
-                    <small>{preset.description}</small>
-                  </button>
-                ))}
-              </div>
-            </section>
+              <section className="panel-section">
+                <div className="section-heading">
+                  <span>
+                    <Palette size={15} />
+                    Presets
+                  </span>
+                </div>
+                <div className="preset-grid">
+                  {presets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`preset-button ${config.preset === preset.id ? 'is-active' : ''}`}
+                      onClick={() => onPreset(preset.id)}
+                    >
+                      <span>{preset.label}</span>
+                      <small>{preset.description}</small>
+                    </button>
+                  ))}
+                </div>
+              </section>
 
-            <section className="panel-section control-stack">
-              <div className="section-heading">
-                <span>Shell</span>
-              </div>
-              <div className="swatch-grid">
-                {bodyOptions.map((option) => (
-                  <SwatchButton<BodyOptionId>
-                    key={option.id}
-                    option={option}
-                    active={config.body === option.id}
-                    onClick={(body) => onChange({ body })}
-                  />
-                ))}
-              </div>
-            </section>
+              <section className="panel-section control-stack">
+                <div className="section-heading">
+                  <span>Earcups</span>
+                </div>
+                <div className="swatch-grid">
+                  {bodyOptions.map((option) => (
+                    <SwatchButton<BodyOptionId>
+                      key={option.id}
+                      option={option}
+                      active={config.body === option.id}
+                      onClick={(body) => onChange({ body })}
+                    />
+                  ))}
+                </div>
+              </section>
 
-            <section className="panel-section control-stack">
-              <div className="section-heading">
-                <span>Headband</span>
-              </div>
-              <div className="swatch-grid">
-                {headbandOptions.map((option) => (
-                  <SwatchButton<HeadbandOptionId>
-                    key={option.id}
-                    option={option}
-                    active={config.headband === option.id}
-                    onClick={(headband) => onChange({ headband })}
-                  />
-                ))}
-              </div>
-            </section>
+              <section className="panel-section control-stack">
+                <div className="section-heading">
+                  <span>Headband</span>
+                </div>
+                <div className="swatch-grid">
+                  {headbandOptions.map((option) => (
+                    <SwatchButton<HeadbandOptionId>
+                      key={option.id}
+                      option={option}
+                      active={config.headband === option.id}
+                      onClick={(headband) => onChange({ headband })}
+                    />
+                  ))}
+                </div>
+              </section>
 
-            <section className="panel-section control-stack">
-              <div className="section-heading">
-                <span>Cushions</span>
-              </div>
-              <div className="swatch-grid">
-                {cushionOptions.map((option) => (
-                  <SwatchButton<CushionOptionId>
-                    key={option.id}
-                    option={option}
-                    active={config.cushion === option.id}
-                    onClick={(cushion) => onChange({ cushion })}
-                  />
-                ))}
-              </div>
-            </section>
+              <section className="panel-section control-stack">
+                <div className="section-heading">
+                  <span>Brushed metal</span>
+                </div>
+                <div className="swatch-grid">
+                  {metalOptions.map((option) => (
+                    <SwatchButton<MetalOptionId>
+                      key={option.id}
+                      option={option}
+                      active={config.metal === option.id}
+                      onClick={(metal) => onChange({ metal })}
+                    />
+                  ))}
+                </div>
+              </section>
 
-            <section className="panel-section control-stack">
-              <div className="section-heading">
-                <span>Brushed metal</span>
-              </div>
-              <div className="swatch-grid">
-                {metalOptions.map((option) => (
-                  <SwatchButton<MetalOptionId>
-                    key={option.id}
-                    option={option}
-                    active={config.metal === option.id}
-                    onClick={(metal) => onChange({ metal })}
-                  />
-                ))}
-              </div>
-            </section>
+              <section className="panel-section control-stack">
+                <div className="section-heading">
+                  <span>Plastic</span>
+                </div>
+                <div className="swatch-grid">
+                  {plasticOptions.map((option) => (
+                    <SwatchButton<PlasticOptionId>
+                      key={option.id}
+                      option={option}
+                      active={config.plastic === option.id}
+                      onClick={(plastic) => onChange({ plastic })}
+                    />
+                  ))}
+                </div>
+              </section>
 
-            <section className="panel-section control-stack">
-              <div className="section-heading">
-                <span>Ports</span>
-              </div>
-              <div className="swatch-grid">
-                {portOptions.map((option) => (
-                  <SwatchButton<PortOptionId>
-                    key={option.id}
-                    option={option}
-                    active={config.ports === option.id}
-                    onClick={(ports) => onChange({ ports })}
-                  />
-                ))}
-              </div>
-            </section>
-
-            <section className="panel-section control-stack">
-              <div className="section-heading">
-                <span>Stitches</span>
-              </div>
-              <div className="swatch-grid is-compact">
-                {stitchOptions.map((option) => (
-                  <SwatchButton<StitchOptionId>
-                    key={option.id}
-                    option={option}
-                    active={config.stitches === option.id}
-                    onClick={(stitches) => onChange({ stitches })}
-                  />
-                ))}
-              </div>
-            </section>
-          </aside>
+              <section className="panel-section control-stack">
+                <div className="section-heading">
+                  <span>Stitches</span>
+                </div>
+                <div className="swatch-grid is-compact">
+                  {stitchOptions.map((option) => (
+                    <SwatchButton<StitchOptionId>
+                      key={option.id}
+                      option={option}
+                      active={config.stitches === option.id}
+                      onClick={(stitches) => onChange({ stitches })}
+                    />
+                  ))}
+                </div>
+              </section>
+            </aside>
           ) : null}
 
           <nav className="view-switcher" aria-label="Camera views">
-            {Object.entries(cameraViews).map(([view, item]) => (
-              <button
-                key={view}
-                type="button"
-                className={config.view === view ? 'is-active' : ''}
-                onClick={() => onChange({ view: view as ViewId, activeHotspot: null })}
-              >
-                {view === 'hero' ? <Eye size={17} /> : <Camera size={17} />}
-                <span>{item.label}</span>
-              </button>
-            ))}
+            <button
+              type="button"
+              className={config.view === 'hero' ? 'is-active' : ''}
+              onClick={() => onChange({ view: 'hero' as ViewId, activeHotspot: null })}
+            >
+              <Eye size={17} />
+              <span>{cameraViews.hero.label}</span>
+            </button>
+            <button
+              type="button"
+              className={config.rotationPaused ? 'is-active' : ''}
+              onClick={() => onChange({ rotationPaused: !config.rotationPaused })}
+            >
+              {config.rotationPaused ? <Play size={17} /> : <Pause size={17} />}
+              <span>{config.rotationPaused ? 'Resume' : 'Pause'}</span>
+            </button>
+            <button
+              type="button"
+              className={config.view === 'detail' ? 'is-active' : ''}
+              onClick={() => onChange({ view: 'detail' as ViewId, activeHotspot: null })}
+            >
+              <Camera size={17} />
+              <span>{cameraViews.detail.label}</span>
+            </button>
           </nav>
         </>
       )}

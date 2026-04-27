@@ -1,13 +1,12 @@
 import {
   bodyOptions,
-  cushionOptions,
   defaultConfig,
   findPresetForConfig,
   headbandOptions,
   hotspotDefinitions,
   isOption,
   metalOptions,
-  portOptions,
+  plasticOptions,
   presets,
   stitchOptions,
   type BodyOptionId,
@@ -17,7 +16,7 @@ import {
   type ViewId,
 } from '../config/product'
 
-const views: ViewId[] = ['hero', 'side', 'detail']
+const views: ViewId[] = ['hero', 'detail']
 const modes: ExperienceMode[] = ['customize', 'information']
 const hotspotIds = hotspotDefinitions.map((hotspot) => hotspot.id)
 
@@ -36,11 +35,11 @@ export function readConfigFromUrl(): ConfigState {
 
   const body = params.get('body')
   const headband = params.get('headband')
-  const cushion = params.get('cushion')
   const metal = params.get('metal')
-  const ports = params.get('ports')
+  const plastic = params.get('plastic')
   const stitches = params.get('stitches')
   const view = params.get('view')
+  const paused = params.get('paused')
   const mode = params.get('mode')
   const legacyHotspots = params.get('hotspots')
   const activeHotspot = params.get('hotspot')
@@ -62,11 +61,16 @@ export function readConfigFromUrl(): ConfigState {
     ...base,
     body: isOption(parsedBody, bodyOptions) ? (parsedBody as BodyOptionId) : base.body,
     headband: isOption(headband, headbandOptions) ? headband : base.headband,
-    cushion: isOption(cushion, cushionOptions) ? cushion : base.cushion,
     metal: isOption(metal, metalOptions) ? metal : base.metal,
-    ports: isOption(ports, portOptions) ? ports : base.ports,
+    plastic: isOption(plastic, plasticOptions) ? plastic : base.plastic,
     stitches: isOption(stitches, stitchOptions) ? stitches : base.stitches,
     view: views.includes(view as ViewId) ? (view as ViewId) : base.view,
+    rotationPaused:
+      paused === '1' || paused === 'true'
+        ? true
+        : paused === '0' || paused === 'false'
+          ? false
+          : base.rotationPaused,
     mode: parsedMode,
     activeHotspot: parsedHotspot,
   }
@@ -84,11 +88,11 @@ export function writeConfigToUrl(config: ConfigState) {
   params.set('preset', config.preset)
   params.set('body', config.body)
   params.set('headband', config.headband)
-  params.set('cushion', config.cushion)
   params.set('metal', config.metal)
-  params.set('ports', config.ports)
+  params.set('plastic', config.plastic)
   params.set('stitches', config.stitches)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
+  if (config.rotationPaused) params.set('paused', '1')
   if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.activeHotspot) params.set('hotspot', config.activeHotspot)
 
@@ -104,11 +108,11 @@ export function getShareUrl(config: ConfigState) {
   params.set('preset', config.preset)
   params.set('body', config.body)
   params.set('headband', config.headband)
-  params.set('cushion', config.cushion)
   params.set('metal', config.metal)
-  params.set('ports', config.ports)
+  params.set('plastic', config.plastic)
   params.set('stitches', config.stitches)
   if (config.view !== defaultConfig.view) params.set('view', config.view)
+  if (config.rotationPaused) params.set('paused', '1')
   if (config.mode !== defaultConfig.mode) params.set('mode', config.mode)
   if (config.activeHotspot) params.set('hotspot', config.activeHotspot)
 
